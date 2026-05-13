@@ -17,100 +17,146 @@ st.set_page_config(
 )
 
 # ============================================================
-# CSS MELHORADO
+# CSS - CORES LINKEDIN
 # ============================================================
 st.markdown("""
 <style>
-.stApp { background: #0f172a; }
+/* Cores LinkedIn */
+:root {
+    --linkedin-blue: #0A66C2;
+    --linkedin-blue-light: #E8F4FD;
+    --linkedin-gray-bg: #F3F6F8;
+    --linkedin-gray-card: #FFFFFF;
+    --linkedin-gray-text: #1E2A3A;
+    --linkedin-gray-muted: #6B7A8A;
+    --linkedin-border: #E1E5E8;
+    --linkedin-success: #057642;
+    --linkedin-warning: #DF7042;
+}
+
+.stApp {
+    background: #F3F6F8 !important;
+}
 
 /* Cards de métricas */
 .metric-card {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border-radius: 16px;
+    background: #FFFFFF;
+    border-radius: 12px;
     padding: 24px 20px;
     text-align: center;
-    border: 1px solid #334155;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #E1E5E8;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
 .metric-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
-    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-color: #0A66C2;
 }
-.metric-icon { font-size: 36px; margin-bottom: 12px; }
-.metric-title { color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
-.metric-value { color: white; font-size: 32px; font-weight: bold; margin-top: 12px; }
-.metric-sub { color: #64748b; font-size: 11px; margin-top: 8px; }
+.metric-icon { font-size: 32px; margin-bottom: 12px; }
+.metric-title { 
+    color: #6B7A8A; 
+    font-size: 12px; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+.metric-value { 
+    color: #1E2A3A; 
+    font-size: 32px; 
+    font-weight: 700; 
+    margin-top: 12px;
+}
+.metric-sub { 
+    color: #6B7A8A; 
+    font-size: 11px; 
+    margin-top: 8px;
+}
 
 /* Cards de insight */
 .insight-card {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border-left: 4px solid #3b82f6;
+    background: #FFFFFF;
+    border-left: 4px solid #0A66C2;
     padding: 18px 20px;
-    border-radius: 12px;
+    border-radius: 10px;
     margin-bottom: 15px;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    border: 1px solid #E1E5E8;
 }
 .insight-card:hover {
-    border-left-color: #8b5cf6;
-    transform: translateX(5px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
-.insight-card h4 { color: white; margin-bottom: 8px; font-size: 14px; }
-.insight-card p { color: #94a3b8; margin: 0; font-size: 13px; }
-.insight-card .insight-value { color: #3b82f6; font-weight: bold; font-size: 18px; margin-top: 10px; }
+.insight-card h4 { 
+    color: #1E2A3A; 
+    margin-bottom: 8px; 
+    font-size: 14px;
+    font-weight: 600;
+}
+.insight-card p { 
+    color: #6B7A8A; 
+    margin: 0; 
+    font-size: 13px;
+}
+.insight-card .insight-value { 
+    color: #0A66C2; 
+    font-weight: bold; 
+    font-size: 18px; 
+    margin-top: 10px;
+}
 
 /* Seções */
 .section-header {
     margin: 40px 0 20px 0;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #334155;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #E1E5E8;
 }
 .section-header h2 {
-    color: white;
-    font-size: 22px;
+    color: #1E2A3A;
+    font-size: 20px;
+    font-weight: 600;
     display: inline-block;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
 }
 .section-tag {
     float: right;
-    background: #1e293b;
+    background: #E8F4FD;
     padding: 4px 12px;
     border-radius: 20px;
-    font-size: 12px;
-    color: #94a3b8;
+    font-size: 11px;
+    color: #0A66C2;
+    font-weight: 500;
 }
 
 /* Status bars */
 .status-bar {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    background: #E8F4FD;
     padding: 12px 20px;
-    border-radius: 12px;
+    border-radius: 10px;
     margin-bottom: 20px;
-    color: #10b981;
-    border-left: 4px solid #10b981;
+    color: #057642;
+    border-left: 4px solid #057642;
     font-size: 14px;
 }
 .filter-info {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    background: #FFF8E7;
     padding: 12px 20px;
-    border-radius: 12px;
+    border-radius: 10px;
     margin-bottom: 20px;
-    color: #fbbf24;
-    border-left: 4px solid #fbbf24;
+    color: #DF7042;
+    border-left: 4px solid #DF7042;
     font-size: 14px;
 }
 
 /* Sidebar */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0f172a 0%, #0a0f1a 100%);
-    border-right: 1px solid #334155;
+    background: #FFFFFF !important;
+    border-right: 1px solid #E1E5E8;
+}
+section[data-testid="stSidebar"] * {
+    color: #1E2A3A !important;
 }
 section[data-testid="stSidebar"] .stSelectbox label,
 section[data-testid="stSidebar"] .stMultiSelect label {
-    color: #94a3b8 !important;
+    color: #6B7A8A !important;
+    font-weight: 500;
 }
 
 /* Tabs */
@@ -118,46 +164,71 @@ section[data-testid="stSidebar"] .stMultiSelect label {
     gap: 8px;
 }
 .stTabs [data-baseweb="tab"] {
-    background: #1e293b;
+    background: #F3F6F8;
     border-radius: 8px;
     padding: 8px 24px;
-    color: #94a3b8;
+    color: #6B7A8A;
+    border: 1px solid #E1E5E8;
 }
 .stTabs [aria-selected="true"] {
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    background: #0A66C2;
     color: white;
+    border: none;
 }
 
 /* Botões */
 .stDownloadButton button {
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+    background: #0A66C2 !important;
     color: white !important;
     border: none !important;
     padding: 10px 20px !important;
-    border-radius: 10px !important;
+    border-radius: 24px !important;
     font-weight: 600 !important;
-    transition: all 0.3s ease !important;
+    transition: all 0.2s ease !important;
 }
 .stDownloadButton button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px -5px rgba(59,130,246,0.5);
+    background: #004182 !important;
+    transform: translateY(-1px);
 }
 
 /* Footer */
 .page-footer {
     text-align: center;
     padding: 30px 20px 20px;
-    color: #64748b;
+    color: #6B7A8A;
     margin-top: 50px;
-    border-top: 1px solid #334155;
+    border-top: 1px solid #E1E5E8;
     font-size: 12px;
 }
 
 /* Expander */
 .streamlit-expanderHeader {
-    background: #1e293b;
+    background: #F3F6F8;
     border-radius: 10px;
-    color: white;
+    color: #1E2A3A;
+    border: 1px solid #E1E5E8;
+}
+
+/* Headers */
+h1, h2, h3, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+    color: #1E2A3A !important;
+}
+
+/* Texto normal */
+p, .stMarkdown {
+    color: #6B7A8A;
+}
+
+/* DataFrame */
+[data-testid="stDataFrame"] {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #E1E5E8;
+}
+
+/* Info/Warning/Success */
+.stAlert {
+    border-radius: 10px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -364,13 +435,18 @@ if uploaded_file is not None:
                     area_data.columns = ['Área', 'Valor']
                     
                     fig = px.bar(area_data, x='Área', y='Valor', color='Valor',
-                                color_continuous_scale=['#3b82f6', '#8b5cf6', '#ec4899'])
-                    fig.update_layout(template="plotly_dark", height=500, paper_bgcolor="#0f172a", plot_bgcolor="#0f172a")
+                                color_continuous_scale=['#0A66C2', '#7B8BA4'])
+                    fig.update_layout(
+                        template="plotly_white", 
+                        height=500, 
+                        paper_bgcolor="#FFFFFF", 
+                        plot_bgcolor="#F8FAFC",
+                        font=dict(color="#1E2A3A")
+                    )
                     fig.update_traces(texttemplate='R$ %{y:,.0f}', textposition='outside')
                     st.plotly_chart(fig, use_container_width=True)
                 
                 with col2:
-                    # Tabela de áreas
                     st.markdown("#### 🔢 Detalhamento")
                     area_data['Valor Formatado'] = area_data['Valor'].apply(fmt_brl)
                     area_data['%'] = (area_data['Valor'] / area_data['Valor'].sum() * 100).round(1).astype(str) + '%'
@@ -387,18 +463,29 @@ if uploaded_file is not None:
                     
                     fig2 = px.bar(reg_data, x='Região', y='Valor', color='Valor',
                                  color_continuous_scale='Blues', text='Valor')
-                    fig2.update_layout(template="plotly_dark", height=450, paper_bgcolor="#0f172a", plot_bgcolor="#0f172a")
+                    fig2.update_layout(
+                        template="plotly_white", 
+                        height=450, 
+                        paper_bgcolor="#FFFFFF", 
+                        plot_bgcolor="#F8FAFC",
+                        font=dict(color="#1E2A3A")
+                    )
                     fig2.update_traces(texttemplate='R$ %{y:,.0f}', textposition='outside')
                     st.plotly_chart(fig2, use_container_width=True)
                 
                 with col2:
                     fig3 = px.pie(reg_data, values='Valor', names='Região', hole=0.4,
-                                 color_discrete_sequence=['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4'])
-                    fig3.update_layout(template="plotly_dark", height=450, paper_bgcolor="#0f172a", plot_bgcolor="#0f172a")
+                                 color_discrete_sequence=['#0A66C2', '#7B8BA4', '#057642', '#DF7042', '#6B7A8A', '#1E2A3A'])
+                    fig3.update_layout(
+                        template="plotly_white", 
+                        height=450, 
+                        paper_bgcolor="#FFFFFF", 
+                        plot_bgcolor="#FFFFFF",
+                        font=dict(color="#1E2A3A")
+                    )
                     fig3.update_traces(textposition='inside', textinfo='percent+label')
                     st.plotly_chart(fig3, use_container_width=True)
                 
-                # Mapa de calor de investimento
                 st.markdown("#### 🔥 Concentração de Investimento")
                 reg_data['Percentual'] = (reg_data['Valor'] / reg_data['Valor'].sum() * 100).round(1)
                 st.dataframe(reg_data, use_container_width=True, hide_index=True)
@@ -415,18 +502,29 @@ if uploaded_file is not None:
                 with col1:
                     fig4 = px.line(inv_ano, x='Ano', y='Total', markers=True,
                                   title='💰 Evolução do Investimento Total')
-                    fig4.update_layout(template="plotly_dark", height=400, paper_bgcolor="#0f172a", plot_bgcolor="#0f172a")
-                    fig4.update_traces(line=dict(width=3, color='#3b82f6'), marker=dict(size=8))
+                    fig4.update_layout(
+                        template="plotly_white", 
+                        height=400, 
+                        paper_bgcolor="#FFFFFF", 
+                        plot_bgcolor="#F8FAFC",
+                        font=dict(color="#1E2A3A")
+                    )
+                    fig4.update_traces(line=dict(width=3, color='#0A66C2'), marker=dict(size=8, color='#0A66C2'))
                     st.plotly_chart(fig4, use_container_width=True)
                 
                 with col2:
                     fig5 = px.bar(inv_ano, x='Ano', y='Quantidade',
                                  title='📊 Evolução do Número de Bolsas', color='Quantidade',
                                  color_continuous_scale='Greens')
-                    fig5.update_layout(template="plotly_dark", height=400, paper_bgcolor="#0f172a", plot_bgcolor="#0f172a")
+                    fig5.update_layout(
+                        template="plotly_white", 
+                        height=400, 
+                        paper_bgcolor="#FFFFFF", 
+                        plot_bgcolor="#F8FAFC",
+                        font=dict(color="#1E2A3A")
+                    )
                     st.plotly_chart(fig5, use_container_width=True)
                 
-                # Variação percentual
                 if len(inv_ano) >= 2:
                     var_total = ((inv_ano['Total'].iloc[-1] - inv_ano['Total'].iloc[-2]) / inv_ano['Total'].iloc[-2] * 100)
                     var_quant = ((inv_ano['Quantidade'].iloc[-1] - inv_ano['Quantidade'].iloc[-2]) / inv_ano['Quantidade'].iloc[-2] * 100)
@@ -513,7 +611,7 @@ if uploaded_file is not None:
                     st.markdown(f"""
                     <div class="insight-card">
                         <h4>📊 Variação Anual</h4>
-                        <p>De <b>{int(inv_ano.index[-2])}</b> para <b>{int(inv_ano.index[-1])}</b>: <b style="color:{'#10b981' if var>0 else '#ef4444'}">{var:+.1f}%</b></p>
+                        <p>De <b>{int(inv_ano.index[-2])}</b> para <b>{int(inv_ano.index[-1])}</b>: <b style="color:{'#057642' if var>0 else '#DF7042'}">{var:+.1f}%</b></p>
                         <div class="insight-value">{cor} {fmt_brl(abs(inv_ano.iloc[-1] - inv_ano.iloc[-2]))}</div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -544,7 +642,6 @@ if uploaded_file is not None:
             st.download_button("📄 **CSV** - Dados filtrados", csv_data, f"cnpq_dados_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
         
         with col2:
-            # Relatório resumido
             relatorio = f"""
             ========================================
             RELATÓRIO CNPq ANALYTICS
@@ -567,9 +664,9 @@ if uploaded_file is not None:
         
         with col3:
             st.markdown(f"""
-            <div style="background:#1e293b; padding:15px; border-radius:12px; text-align:center;">
-                <span style="color:#94a3b8; font-size:12px;">📊 Período analisado</span><br>
-                <span style="color:white; font-weight:bold;">
+            <div style="background:#F3F6F8; padding:15px; border-radius:12px; text-align:center; border:1px solid #E1E5E8;">
+                <span style="color:#6B7A8A; font-size:12px;">📊 Período analisado</span><br>
+                <span style="color:#1E2A3A; font-weight:bold;">
                     {int(df_filtrado['ano'].min()) if 'ano' in df_filtrado.columns else 'N/A'} - 
                     {int(df_filtrado['ano'].max()) if 'ano' in df_filtrado.columns else 'N/A'}
                 </span>
