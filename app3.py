@@ -19,101 +19,124 @@ st.set_page_config(
 # ============================================================
 # CORES INSTITUCIONAIS
 # ============================================================
-COR_PRIMARIA = "#003087"      # Azul
-COR_SECUNDARIA = "#008000"    # Verde
-COR_DESTAQUE = "#FFCC00"      # Amarelo
+COR_PRIMARIA = "#003087"
+COR_SECUNDARIA = "#008000"
+COR_DESTAQUE = "#FFCC00"
 COR_FUNDO = "#F5F7FA"
 COR_TEXTO = "#1A2B4C"
 
 # ============================================================
-# CSS
+# CSS SIMPLIFICADO (SEM ERROS)
 # ============================================================
-st.markdown(f"""
+st.markdown("""
 <style>
-.stApp {{ background: {COR_FUNDO} !important; }}
-html, body, .stApp {{ color: {COR_TEXTO} !important; font-family: 'Inter', sans-serif !important; }}
-#MainMenu, footer, header {{ visibility: hidden; }}
-.block-container {{ padding: 2rem 2.5rem !important; max-width: 1400px !important; }}
+.stApp { background: #F5F7FA !important; }
+.block-container { padding: 2rem 2rem !important; max-width: 1400px !important; }
 
 /* Header */
-.page-header {{
-    background: linear-gradient(135deg, {COR_PRIMARIA}, {COR_SECUNDARIA});
+.page-header {
+    background: linear-gradient(135deg, #003087, #008000);
     padding: 1.5rem 2rem;
     border-radius: 16px;
     margin-bottom: 28px;
-}}
-.page-header h1 {{
+}
+.page-header h1 {
     font-size: 28px !important;
     font-weight: 700 !important;
     color: white !important;
     margin: 0 0 8px 0 !important;
-}}
-.page-header p {{
+}
+.page-header p {
     color: rgba(255,255,255,0.9);
     font-size: 14px;
     margin: 0;
-}}
-.update-badge {{
-    background: {COR_DESTAQUE};
-    color: {COR_PRIMARIA};
+}
+.update-badge {
+    background: #FFCC00;
+    color: #003087;
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
     display: inline-block;
     margin-top: 12px;
-}}
+}
 
-/* KPI Cards */
-.kpi-grid {{ display: flex; gap: 20px; margin-bottom: 32px; flex-wrap: wrap; }}
-.kpi-card {{
-    flex: 1; min-width: 180px; background: white; border-radius: 16px;
-    padding: 24px 20px; text-align: center; border: 1px solid #E8ECF0;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-    border-top: 4px solid {COR_PRIMARIA};
-}}
-.kpi-label {{ font-size: 12px; text-transform: uppercase; color: #6B7A8F; margin-bottom: 8px; font-weight: 600; }}
-.kpi-value {{ font-size: 32px; font-weight: 700; color: {COR_TEXTO}; margin: 8px 0; }}
-.kpi-sub {{ font-size: 11px; color: #6B7A8F; }}
+/* Cards */
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid #E8ECF0;
+}
+.stat-number {
+    font-size: 28px;
+    font-weight: 700;
+    color: #003087;
+}
+.stat-label {
+    font-size: 13px;
+    color: #6B7A8F;
+    margin-top: 8px;
+}
 
 /* Insight */
-.insight-card {{
-    background: linear-gradient(135deg, #E8F4FD, #FFFFFF);
-    border-left: 4px solid {COR_DESTAQUE};
+.insight-card {
+    background: #E8F4FD;
+    border-left: 4px solid #FFCC00;
     padding: 16px 20px;
     border-radius: 12px;
     margin-bottom: 20px;
-}}
-.insight-title {{ font-size: 13px; font-weight: 700; color: {COR_PRIMARIA}; margin-bottom: 8px; }}
-.insight-text {{ font-size: 14px; color: {COR_TEXTO}; }}
+}
+.insight-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #003087;
+    margin-bottom: 8px;
+}
 
 /* Tabs */
-.stTabs [data-baseweb="tab-list"] {{ gap: 8px; }}
-.stTabs [data-baseweb="tab"] {{
-    background: white; border-radius: 12px; padding: 8px 24px;
-    color: #6B7A8F; border: 1px solid #E8ECF0;
-}}
-.stTabs [aria-selected="true"] {{ background: {COR_PRIMARIA}; color: white; border: none; }}
+.stTabs [data-baseweb="tab-list"] { gap: 8px; }
+.stTabs [data-baseweb="tab"] {
+    background: white;
+    border-radius: 12px;
+    padding: 8px 24px;
+    color: #6B7A8F;
+    border: 1px solid #E8ECF0;
+}
+.stTabs [aria-selected="true"] {
+    background: #003087;
+    color: white;
+    border: none;
+}
 
 /* Botões */
-.stDownloadButton button {{
-    background: {COR_PRIMARIA} !important; color: white !important;
-    border-radius: 30px !important; padding: 10px 24px !important;
-    font-weight: 600 !important; border: none !important;
-}}
+.stDownloadButton button {
+    background: #003087 !important;
+    color: white !important;
+    border-radius: 30px !important;
+    padding: 10px 24px !important;
+    font-weight: 600 !important;
+    border: none !important;
+}
 
 /* Footer */
-.footer {{
-    text-align: center; padding: 30px 0 20px; margin-top: 40px;
-    border-top: 1px solid #E8ECF0; color: #6B7A8F; font-size: 12px;
-}}
+.footer {
+    text-align: center;
+    padding: 30px 0 20px;
+    margin-top: 40px;
+    border-top: 1px solid #E8ECF0;
+    color: #6B7A8F;
+    font-size: 12px;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
 # HEADER
 # ============================================================
-st.markdown(f"""
+st.markdown("""
 <div class="page-header">
     <h1>🔬 CNPq Analytics</h1>
     <p>Análise estratégica de investimentos em pesquisa e desenvolvimento no Brasil</p>
@@ -231,15 +254,10 @@ if uploaded_file is not None:
         n_bolsas = df_filtrado.shape[0]
         
         col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("💰 INVESTIMENTO TOTAL", fmt_brl(total_val), help="Valor total pago em bolsas")
-        with col2:
-            st.metric("👥 PESQUISADORES", fmt_num(n_pesq), help="Número de beneficiários únicos")
-        with col3:
-            st.metric("🏛️ INSTITUIÇÕES", fmt_num(n_inst), help="Instituições de destino")
-        with col4:
-            st.metric("🎫 TOTAL DE BOLSAS", fmt_num(n_bolsas), help="Número total de registros")
+        col1.metric("💰 INVESTIMENTO TOTAL", fmt_brl(total_val))
+        col2.metric("👥 PESQUISADORES", fmt_num(n_pesq))
+        col3.metric("🏛️ INSTITUIÇÕES", fmt_num(n_inst))
+        col4.metric("🎫 TOTAL DE BOLSAS", fmt_num(n_bolsas))
         
         # INSIGHTS
         insights = []
@@ -262,62 +280,38 @@ if uploaded_file is not None:
         st.markdown(f"""
         <div class="insight-card">
             <div class="insight-title">🔍 INSIGHTS AUTOMÁTICOS</div>
-            <div class="insight-text">{" • ".join(insights)}</div>
+            <div style="font-size: 14px;">{" • ".join(insights)}</div>
         </div>
         """, unsafe_allow_html=True)
         
         # TABS
         tab1, tab2, tab3, tab4 = st.tabs(["📊 Por Área", "🗺️ Por Região", "📈 Evolução", "🏆 Rankings"])
         
-        # ============================================================
-        # TAB 1: POR ÁREA (COM VERIFICAÇÃO)
-        # ============================================================
+        # ==================== TAB 1: POR ÁREA ====================
         with tab1:
             if 'grande_area' in df_filtrado.columns:
                 area_data = df_filtrado.groupby('grande_area')['valor_pago'].sum().sort_values(ascending=False).head(10).reset_index()
                 area_data.columns = ['Área', 'Valor']
                 
                 if len(area_data) > 0:
-                    fig1 = go.Figure()
-                    fig1.add_trace(go.Bar(
-                        x=area_data['Valor'],
-                        y=area_data['Área'],
-                        orientation='h',
-                        marker=dict(color=area_data['Valor'], colorscale='Blues', showscale=False),
-                        text=area_data['Valor'].apply(lambda x: fmt_brl(x)),
-                        textposition='outside',
-                        hovertemplate='<b>%{y}</b><br>%{customdata}<extra></extra>',
-                        customdata=area_data['Valor'].apply(lambda x: fmt_brl(x))
-                    ))
-                    
-                    fig1.update_layout(
-                        title="Top 10 Áreas do Conhecimento",
-                        xaxis_title="Investimento (R$)",
-                        yaxis_title="",
-                        height=500,
-                        margin=dict(l=20, r=20, t=50, b=20),
-                        plot_bgcolor='white',
-                        paper_bgcolor='white',
-                        font=dict(color='#1A2B4C')
-                    )
-                    fig1.update_xaxis(gridcolor='#E8ECF0', tickformat=',.0f')
-                    fig1.update_yaxis(gridcolor='#E8ECF0')
+                    # Usando px.bar (mais estável que go.Figure)
+                    fig1 = px.bar(area_data, x='Valor', y='Área', orientation='h',
+                                 color='Valor', color_continuous_scale='Blues',
+                                 text='Valor', title="Top 10 Áreas do Conhecimento")
+                    fig1.update_layout(height=500, margin=dict(l=20, r=20, t=50, b=20))
+                    fig1.update_traces(texttemplate='R$ %{x:,.0f}', textposition='outside')
                     st.plotly_chart(fig1, use_container_width=True)
                     
-                    # Tabela ao lado
-                    col1, col2 = st.columns([2, 1])
-                    with col2:
-                        area_show = area_data.copy()
-                        area_show['Valor'] = area_show['Valor'].apply(fmt_brl)
-                        st.dataframe(area_show[['Área', 'Valor']], use_container_width=True, hide_index=True)
+                    # Tabela resumo
+                    area_show = area_data.copy()
+                    area_show['Valor'] = area_show['Valor'].apply(fmt_brl)
+                    st.dataframe(area_show[['Área', 'Valor']], use_container_width=True, hide_index=True)
                 else:
-                    st.info("Nenhum dado disponível para a coluna 'grande_area'")
+                    st.info("Nenhum dado disponível")
             else:
-                st.info("Coluna 'grande_area' não encontrada no arquivo CSV")
+                st.info("Coluna 'grande_area' não encontrada")
         
-        # ============================================================
-        # TAB 2: POR REGIÃO (COM VERIFICAÇÃO)
-        # ============================================================
+        # ==================== TAB 2: POR REGIÃO ====================
         with tab2:
             if 'regiao_nome' in df_filtrado.columns:
                 reg_data = df_filtrado.groupby('regiao_nome')['valor_pago'].sum().reset_index()
@@ -327,19 +321,13 @@ if uploaded_file is not None:
                     col1, col2 = st.columns(2)
                     
                     with col1:
-                        fig2 = px.bar(reg_data, x='Região', y='Valor', color='Valor', 
-                                     color_continuous_scale='Blues', text='Valor')
-                        fig2.update_layout(
-                            template="plotly_white", 
-                            height=450,
-                            title="Investimento por Região",
-                            xaxis_title="Região",
-                            yaxis_title="Investimento (R$)"
-                        )
+                        fig2 = px.bar(reg_data, x='Região', y='Valor', color='Valor',
+                                     color_continuous_scale='Blues', text='Valor',
+                                     title="Investimento por Região")
                         fig2.update_traces(texttemplate='R$ %{y:,.0f}', textposition='outside')
                         st.plotly_chart(fig2, use_container_width=True)
                         
-                        st.markdown("##### 💰 Ticket Médio por Região")
+                        # Ticket médio
                         ticket_reg = df_filtrado.groupby('regiao_nome')['valor_pago'].mean().sort_values(ascending=False).reset_index()
                         ticket_reg.columns = ['Região', 'Ticket Médio']
                         ticket_reg['Ticket Médio'] = ticket_reg['Ticket Médio'].apply(fmt_brl)
@@ -347,12 +335,8 @@ if uploaded_file is not None:
                     
                     with col2:
                         fig3 = px.pie(reg_data, values='Valor', names='Região', hole=0.35,
-                                     color_discrete_sequence=[COR_PRIMARIA, '#7C3AED', COR_SECUNDARIA, COR_DESTAQUE, '#6B7A8F'])
-                        fig3.update_layout(
-                            template="plotly_white", 
-                            height=450,
-                            title="Distribuição por Região"
-                        )
+                                     title="Distribuição por Região",
+                                     color_discrete_sequence=['#003087', '#008000', '#FFCC00', '#6B7A8F', '#7C3AED'])
                         fig3.update_traces(textposition='inside', textinfo='percent+label')
                         st.plotly_chart(fig3, use_container_width=True)
                         
@@ -362,13 +346,11 @@ if uploaded_file is not None:
                             diferenca = sudeste_val / norte_val if norte_val > 0 else 0
                             st.info(f"⚖️ **Sudeste** recebe **{diferenca:.1f}x mais** investimento que **Norte**")
                 else:
-                    st.info("Nenhum dado disponível para a coluna 'regiao_nome'")
+                    st.info("Nenhum dado disponível")
             else:
-                st.info("Coluna 'regiao_nome' não encontrada no arquivo CSV")
+                st.info("Coluna 'regiao_nome' não encontrada")
         
-        # ============================================================
-        # TAB 3: EVOLUÇÃO (COM VERIFICAÇÃO)
-        # ============================================================
+        # ==================== TAB 3: EVOLUÇÃO ====================
         with tab3:
             if 'ano' in df_filtrado.columns:
                 inv_ano = df_filtrado.groupby('ano')['valor_pago'].sum().reset_index()
@@ -379,38 +361,23 @@ if uploaded_file is not None:
                     
                     with col1:
                         fig4 = px.area(inv_ano, x='ano', y='valor_pago', markers=True,
-                                      title="Evolução do Investimento Total")
-                        fig4.update_layout(
-                            template="plotly_white", 
-                            height=400,
-                            xaxis_title="Ano",
-                            yaxis_title="Investimento (R$)"
-                        )
-                        fig4.update_traces(line=dict(width=2, color=COR_PRIMARIA), fillcolor='rgba(0,48,135,0.1)')
+                                      title="Evolução do Investimento")
+                        fig4.update_traces(line=dict(width=2, color='#003087'), fillcolor='rgba(0,48,135,0.1)')
                         st.plotly_chart(fig4, use_container_width=True)
                     
                     with col2:
-                        fig5 = px.bar(inv_ano, x='ano', y='valor_pago', color='valor_pago', 
-                                     color_continuous_scale='Greens',
-                                     title="Investimento por Ano")
-                        fig5.update_layout(
-                            template="plotly_white", 
-                            height=400,
-                            xaxis_title="Ano",
-                            yaxis_title="Investimento (R$)"
-                        )
+                        fig5 = px.bar(inv_ano, x='ano', y='valor_pago', color='valor_pago',
+                                     color_continuous_scale='Greens', title="Investimento por Ano")
                         st.plotly_chart(fig5, use_container_width=True)
                     
                     var = ((inv_ano['valor_pago'].iloc[-1] - inv_ano['valor_pago'].iloc[-2]) / inv_ano['valor_pago'].iloc[-2] * 100)
                     st.metric("📈 Variação Último Ano", f"{var:+.1f}%", delta_color="normal" if var > 0 else "inverse")
                 else:
-                    st.info("Dados insuficientes para análise temporal (menos de 2 anos disponíveis)")
+                    st.info("Dados insuficientes para análise temporal")
             else:
-                st.info("Coluna 'ano' não encontrada no arquivo CSV")
+                st.info("Coluna 'ano' não encontrada")
         
-        # ============================================================
-        # TAB 4: RANKINGS (COM VERIFICAÇÃO)
-        # ============================================================
+        # ==================== TAB 4: RANKINGS ====================
         with tab4:
             col1, col2 = st.columns(2)
             
@@ -420,14 +387,9 @@ if uploaded_file is not None:
                     top_pesq = df_filtrado.groupby('beneficiario')['valor_pago'].sum().sort_values(ascending=False).head(10).reset_index()
                     top_pesq.columns = ['Pesquisador', 'Total']
                     top_pesq['Total'] = top_pesq['Total'].apply(fmt_brl)
-                    
-                    if 'instituicao_destino' in df_filtrado.columns:
-                        inst_map = df_filtrado.groupby('beneficiario')['instituicao_destino'].first().to_dict()
-                        top_pesq['Instituição'] = top_pesq['Pesquisador'].map(inst_map).fillna('-')
-                    
                     st.dataframe(top_pesq, use_container_width=True, hide_index=True)
                 else:
-                    st.info("Coluna 'beneficiario' não encontrada")
+                    st.info("Dados não disponíveis")
             
             with col2:
                 st.markdown("#### 🏛️ Top 10 Instituições")
@@ -437,7 +399,7 @@ if uploaded_file is not None:
                     top_inst['Total'] = top_inst['Total'].apply(fmt_brl)
                     st.dataframe(top_inst, use_container_width=True, hide_index=True)
                 else:
-                    st.info("Coluna 'instituicao_destino' não encontrada")
+                    st.info("Dados não disponíveis")
             
             st.markdown("#### 🎓 Top 10 Modalidades")
             if 'modalidade' in df_filtrado.columns:
@@ -445,11 +407,9 @@ if uploaded_file is not None:
                 top_mod.columns = ['Modalidade', 'Quantidade']
                 st.dataframe(top_mod, use_container_width=True, hide_index=True)
             else:
-                st.info("Coluna 'modalidade' não encontrada")
+                st.info("Dados não disponíveis")
         
-        # ============================================================
-        # EXPORTAÇÃO
-        # ============================================================
+        # ==================== EXPORTAÇÃO ====================
         st.markdown("---")
         st.markdown("### 📥 Exportar Dados")
         
@@ -482,54 +442,28 @@ Bolsas: {fmt_num(n_bolsas)}"""
         st.error("❌ Erro ao carregar o arquivo. Verifique o formato CSV.")
 
 else:
-    # ============================================================
-    # TELA INICIAL
-    # ============================================================
-    
+    # ==================== TELA INICIAL ====================
     st.info("👈 **Faça upload do arquivo CSV no menu lateral para começar**")
     
     st.markdown("""
     <div style="background: white; border-radius: 16px; padding: 24px; margin-bottom: 24px; border: 1px solid #E8ECF0;">
         <h3 style="color: #1A2B4C; margin-bottom: 12px;">📋 Sobre o Dashboard</h3>
         <p style="color: #6B7A8F;">Este dashboard analisa <strong>213.735 bolsas de pesquisa</strong> do CNPq, totalizando mais de <strong>R$ 1 bilhão</strong> em investimentos (2014-2027).</p>
-        <p style="color: #6B7A8F; margin-top: 8px;">✅ <strong>Fonte oficial:</strong> Portal Brasileiro de Dados Abertos (CGU/MDS)</p>
+        <p style="color: #6B7A8F;">✅ <strong>Fonte oficial:</strong> Portal Brasileiro de Dados Abertos (CGU/MDS)</p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Cards alinhados com altura uniforme
+    # Cards alinhados
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.markdown("""
-        <div style="background: white; border-radius: 12px; padding: 24px 16px; text-align: center; border: 1px solid #E8ECF0; height: 100%;">
-            <div style="font-size: 32px; font-weight: 700; color: #003087;">213.735</div>
-            <div style="font-size: 13px; color: #6B7A8F;">Bolsas</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown('<div class="stat-card"><div class="stat-number">213.735</div><div class="stat-label">Bolsas</div></div>', unsafe_allow_html=True)
     with col2:
-        st.markdown("""
-        <div style="background: white; border-radius: 12px; padding: 24px 16px; text-align: center; border: 1px solid #E8ECF0; height: 100%;">
-            <div style="font-size: 32px; font-weight: 700; color: #003087;">R$ 1,02B</div>
-            <div style="font-size: 13px; color: #6B7A8F;">Investimento</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown('<div class="stat-card"><div class="stat-number">R$ 1,02B</div><div class="stat-label">Investimento</div></div>', unsafe_allow_html=True)
     with col3:
-        st.markdown("""
-        <div style="background: white; border-radius: 12px; padding: 24px 16px; text-align: center; border: 1px solid #E8ECF0; height: 100%;">
-            <div style="font-size: 32px; font-weight: 700; color: #003087;">88.079</div>
-            <div style="font-size: 13px; color: #6B7A8F;">Pesquisadores</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown('<div class="stat-card"><div class="stat-number">88.079</div><div class="stat-label">Pesquisadores</div></div>', unsafe_allow_html=True)
     with col4:
-        st.markdown("""
-        <div style="background: white; border-radius: 12px; padding: 24px 16px; text-align: center; border: 1px solid #E8ECF0; height: 100%;">
-            <div style="font-size: 32px; font-weight: 700; color: #003087;">4.281</div>
-            <div style="font-size: 13px; color: #6B7A8F;">Instituições</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="stat-card"><div class="stat-number">4.281</div><div class="stat-label">Instituições</div></div>', unsafe_allow_html=True)
     
     st.markdown("""
     <div style="background: #E8F4FD; border-radius: 12px; padding: 20px; margin-top: 20px;">
@@ -543,13 +477,9 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown(f"""
+    st.markdown("""
     <div class="footer">
         🔬 CNPq Analytics · Dashboard para portfólio<br>
         Fonte: Portal Brasileiro de Dados Abertos (CGU/MDS)
     </div>
     """, unsafe_allow_html=True)
-
-# ============================================================
-# FIM
-# ============================================================
