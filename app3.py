@@ -10,180 +10,253 @@ from datetime import datetime
 # CONFIGURAÇÃO
 # ============================================================
 st.set_page_config(
-    page_title="CNPq Analytics",
+    page_title="CNPq Analytics - Dashboard de Pesquisa",
     page_icon="🔬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ============================================================
-# CSS - CORES LINKEDIN
+# CSS LINKEDIN PLUS
 # ============================================================
 st.markdown("""
 <style>
-/* Cores LinkedIn */
+/* Cores LinkedIn Plus */
 :root {
     --linkedin-blue: #0A66C2;
     --linkedin-blue-light: #E8F4FD;
-    --linkedin-gray-bg: #F3F6F8;
+    --linkedin-gray-bg: #F4F6F9;
     --linkedin-gray-card: #FFFFFF;
-    --linkedin-gray-text: #1E2A3A;
-    --linkedin-gray-muted: #6B7A8A;
-    --linkedin-border: #E1E5E8;
+    --linkedin-gray-text: #1D2B3E;
+    --linkedin-gray-muted: #6B7A8F;
+    --linkedin-border: #E4E8ED;
     --linkedin-success: #057642;
     --linkedin-warning: #DF7042;
+    --linkedin-purple: #7C3AED;
 }
 
+/* Reset */
 .stApp {
-    background: #F3F6F8 !important;
-}
-
-/* Cards de métricas */
-.metric-card {
-    background: #FFFFFF;
-    border-radius: 12px;
-    padding: 24px 20px;
-    text-align: center;
-    border: 1px solid #E1E5E8;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-}
-.metric-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    border-color: #0A66C2;
-}
-.metric-icon { font-size: 32px; margin-bottom: 12px; }
-.metric-title { 
-    color: #6B7A8A; 
-    font-size: 12px; 
-    text-transform: uppercase; 
-    letter-spacing: 0.5px;
-    font-weight: 600;
-}
-.metric-value { 
-    color: #1E2A3A; 
-    font-size: 32px; 
-    font-weight: 700; 
-    margin-top: 12px;
-}
-.metric-sub { 
-    color: #6B7A8A; 
-    font-size: 11px; 
-    margin-top: 8px;
-}
-
-/* Cards de insight */
-.insight-card {
-    background: #FFFFFF;
-    border-left: 4px solid #0A66C2;
-    padding: 18px 20px;
-    border-radius: 10px;
-    margin-bottom: 15px;
-    transition: all 0.2s ease;
-    border: 1px solid #E1E5E8;
-}
-.insight-card:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-.insight-card h4 { 
-    color: #1E2A3A; 
-    margin-bottom: 8px; 
-    font-size: 14px;
-    font-weight: 600;
-}
-.insight-card p { 
-    color: #6B7A8A; 
-    margin: 0; 
-    font-size: 13px;
-}
-.insight-card .insight-value { 
-    color: #0A66C2; 
-    font-weight: bold; 
-    font-size: 18px; 
-    margin-top: 10px;
-}
-
-/* Seções */
-.section-header {
-    margin: 40px 0 20px 0;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #E1E5E8;
-}
-.section-header h2 {
-    color: #1E2A3A;
-    font-size: 20px;
-    font-weight: 600;
-    display: inline-block;
-}
-.section-tag {
-    float: right;
-    background: #E8F4FD;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 11px;
-    color: #0A66C2;
-    font-weight: 500;
-}
-
-/* Status bars */
-.status-bar {
-    background: #E8F4FD;
-    padding: 12px 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    color: #057642;
-    border-left: 4px solid #057642;
-    font-size: 14px;
-}
-.filter-info {
-    background: #FFF8E7;
-    padding: 12px 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    color: #DF7042;
-    border-left: 4px solid #DF7042;
-    font-size: 14px;
+    background: var(--linkedin-gray-bg) !important;
 }
 
 /* Sidebar */
 section[data-testid="stSidebar"] {
-    background: #FFFFFF !important;
-    border-right: 1px solid #E1E5E8;
+    background: var(--linkedin-gray-card) !important;
+    border-right: 1px solid var(--linkedin-border);
+    box-shadow: none;
+}
+section[data-testid="stSidebar"] > div {
+    padding: 1.5rem 1.2rem;
 }
 section[data-testid="stSidebar"] * {
-    color: #1E2A3A !important;
+    color: var(--linkedin-gray-text) !important;
 }
-section[data-testid="stSidebar"] .stSelectbox label,
-section[data-testid="stSidebar"] .stMultiSelect label {
-    color: #6B7A8A !important;
+
+/* Logo Sidebar */
+.sidebar-logo {
+    text-align: center;
+    padding: 20px 0 10px 0;
+    border-bottom: 2px solid var(--linkedin-border);
+    margin-bottom: 20px;
+}
+.sidebar-logo h2 {
+    color: var(--linkedin-blue) !important;
+    font-size: 22px;
+    margin: 0;
+}
+.sidebar-logo p {
+    color: var(--linkedin-gray-muted) !important;
+    font-size: 12px;
+}
+
+/* Cards KPIs */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+.kpi-card {
+    background: var(--linkedin-gray-card);
+    border-radius: 16px;
+    padding: 20px 15px;
+    text-align: center;
+    border: 1px solid var(--linkedin-border);
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    border-color: var(--linkedin-blue);
+}
+.kpi-icon { font-size: 28px; margin-bottom: 10px; }
+.kpi-label { 
+    color: var(--linkedin-gray-muted); 
+    font-size: 11px; 
+    text-transform: uppercase; 
+    letter-spacing: 0.8px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.kpi-value { 
+    color: var(--linkedin-gray-text); 
+    font-size: 28px; 
+    font-weight: 700; 
+    margin: 8px 0 4px;
+    line-height: 1.2;
+}
+.kpi-sub { 
+    color: var(--linkedin-gray-muted); 
+    font-size: 10px; 
+}
+.kpi-trend {
+    font-size: 11px;
+    margin-top: 8px;
+    padding: 4px 8px;
+    border-radius: 20px;
+    display: inline-block;
+}
+.trend-up { background: #E6F4EA; color: #057642; }
+.trend-down { background: #FEF3E8; color: #DF7042; }
+
+/* Cards Insights */
+.insight-card {
+    background: var(--linkedin-gray-card);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    border: 1px solid var(--linkedin-border);
+    transition: all 0.2s ease;
+}
+.insight-card:hover {
+    border-color: var(--linkedin-blue);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.insight-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--linkedin-gray-muted);
+    margin-bottom: 10px;
+}
+.insight-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--linkedin-blue);
+    margin: 10px 0 5px;
+}
+.insight-desc {
+    font-size: 13px;
+    color: var(--linkedin-gray-text);
+    line-height: 1.5;
+}
+.insight-desc strong {
+    color: var(--linkedin-gray-text);
+}
+.insight-icon {
+    float: right;
+    font-size: 40px;
+    opacity: 0.15;
+}
+
+/* Headers */
+.page-header {
+    margin-bottom: 30px;
+}
+.page-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--linkedin-gray-text);
+    margin: 0;
+}
+.page-header p {
+    color: var(--linkedin-gray-muted);
+    font-size: 16px;
+    margin-top: 8px;
+}
+.section-header {
+    margin: 40px 0 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--linkedin-border);
+    padding-bottom: 10px;
+}
+.section-header h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--linkedin-gray-text);
+    margin: 0;
+}
+.section-badge {
+    background: var(--linkedin-blue-light);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--linkedin-blue);
     font-weight: 500;
+}
+
+/* Status Bars */
+.status-success {
+    background: #E6F4EA;
+    border-left: 4px solid var(--linkedin-success);
+    padding: 12px 18px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    color: var(--linkedin-success);
+    font-size: 13px;
+}
+.status-info {
+    background: var(--linkedin-blue-light);
+    border-left: 4px solid var(--linkedin-blue);
+    padding: 12px 18px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    color: var(--linkedin-blue);
+    font-size: 13px;
+}
+.status-warning {
+    background: #FEF3E8;
+    border-left: 4px solid var(--linkedin-warning);
+    padding: 12px 18px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    color: var(--linkedin-warning);
+    font-size: 13px;
 }
 
 /* Tabs */
 .stTabs [data-baseweb="tab-list"] {
     gap: 8px;
+    background: transparent;
 }
 .stTabs [data-baseweb="tab"] {
-    background: #F3F6F8;
-    border-radius: 8px;
-    padding: 8px 24px;
-    color: #6B7A8A;
-    border: 1px solid #E1E5E8;
+    background: var(--linkedin-gray-card);
+    border-radius: 12px;
+    padding: 10px 28px;
+    color: var(--linkedin-gray-muted);
+    border: 1px solid var(--linkedin-border);
+    font-weight: 500;
 }
 .stTabs [aria-selected="true"] {
-    background: #0A66C2;
+    background: var(--linkedin-blue);
     color: white;
     border: none;
 }
 
 /* Botões */
 .stDownloadButton button {
-    background: #0A66C2 !important;
+    background: var(--linkedin-blue) !important;
     color: white !important;
     border: none !important;
-    padding: 10px 20px !important;
-    border-radius: 24px !important;
+    padding: 10px 24px !important;
+    border-radius: 28px !important;
     font-weight: 600 !important;
+    width: 100% !important;
     transition: all 0.2s ease !important;
 }
 .stDownloadButton button:hover {
@@ -191,70 +264,71 @@ section[data-testid="stSidebar"] .stMultiSelect label {
     transform: translateY(-1px);
 }
 
+/* Expander */
+.streamlit-expanderHeader {
+    background: var(--linkedin-gray-card);
+    border-radius: 12px;
+    color: var(--linkedin-gray-text);
+    border: 1px solid var(--linkedin-border);
+    font-weight: 500;
+}
+.streamlit-expanderHeader:hover {
+    border-color: var(--linkedin-blue);
+}
+
+/* Metricas do Plotly */
+.metric-container {
+    background: var(--linkedin-gray-card);
+    border-radius: 12px;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid var(--linkedin-border);
+}
+
 /* Footer */
-.page-footer {
+.footer {
     text-align: center;
     padding: 30px 20px 20px;
-    color: #6B7A8A;
     margin-top: 50px;
-    border-top: 1px solid #E1E5E8;
+    border-top: 1px solid var(--linkedin-border);
+    color: var(--linkedin-gray-muted);
     font-size: 12px;
 }
 
-/* Expander */
-.streamlit-expanderHeader {
-    background: #F3F6F8;
-    border-radius: 10px;
-    color: #1E2A3A;
-    border: 1px solid #E1E5E8;
-}
-
-/* Headers */
-h1, h2, h3, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
-    color: #1E2A3A !important;
-}
-
-/* Texto normal */
-p, .stMarkdown {
-    color: #6B7A8A;
-}
-
-/* DataFrame */
-[data-testid="stDataFrame"] {
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid #E1E5E8;
-}
-
-/* Info/Warning/Success */
+/* Alertas */
 .stAlert {
-    border-radius: 10px;
+    border-radius: 12px;
+}
+
+/* Select e MultiSelect */
+.stMultiSelect [data-baseweb="select"] > div,
+.stSelectbox [data-baseweb="select"] > div {
+    background-color: var(--linkedin-gray-card);
+    border-color: var(--linkedin-border);
+    border-radius: 8px;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# FUNÇÕES UTILITÁRIAS
+# FUNÇÕES
 # ============================================================
 def fmt_brl(valor):
-    """Formata valor em reais"""
     if pd.isna(valor) or valor == 0:
-        return "R$ 0,00"
+        return "R$ 0"
     if abs(valor) >= 1_000_000_000:
         return f"R$ {valor/1_000_000_000:.2f}B".replace(".", ",")
     if abs(valor) >= 1_000_000:
         return f"R$ {valor/1_000_000:.1f}M".replace(".", ",")
-    return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    return f"R$ {valor:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def fmt_num(n):
-    """Formata número com separador de milhar"""
     if pd.isna(n):
         return "0"
     return f"{int(n):,}".replace(",", ".")
 
 @st.cache_data
 def carregar_dados(uploaded_file):
-    """Carrega e processa o CSV"""
     for encoding in ['latin1', 'utf-8', 'cp1252']:
         try:
             uploaded_file.seek(0)
@@ -273,7 +347,6 @@ def carregar_dados(uploaded_file):
             if 'data_inicio_processo' in df.columns:
                 df['data_inicio_processo'] = pd.to_datetime(df['data_inicio_processo'], errors='coerce', dayfirst=True)
                 df['ano'] = df['data_inicio_processo'].dt.year
-                df['mes'] = df['data_inicio_processo'].dt.month
             
             regioes_map = {
                 'SE': 'Sudeste', 'SU': 'Sul', 'NE': 'Nordeste',
@@ -288,144 +361,167 @@ def carregar_dados(uploaded_file):
             continue
     return None
 
+def calcular_tendencia(serie):
+    if len(serie) >= 2:
+        ultimo = serie.iloc[-1]
+        penultimo = serie.iloc[-2]
+        if penultimo > 0:
+            var = (ultimo - penultimo) / penultimo * 100
+            return var
+    return 0
+
 # ============================================================
 # SIDEBAR
 # ============================================================
 with st.sidebar:
-    st.markdown("## 🔬 **CNPq Analytics**")
-    st.markdown("*Plataforma de análise de investimentos em P&D*")
-    st.markdown("---")
-    
-    uploaded_file = st.file_uploader("📤 **Envie o arquivo CSV**", type=["csv"])
-    
-    st.markdown("---")
-    st.markdown("### 📊 Estatísticas do Dataset")
     st.markdown("""
-    - **213.735** registros
-    - **26** colunas de informação
-    - **R$ 1B+** em investimentos
-    - Período: 2014-2027
-    """)
+    <div class="sidebar-logo">
+        <h2>🔬 CNPq Analytics</h2>
+        <p>Dashboard de Pesquisa e Inovação</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    uploaded_file = st.file_uploader(
+        "📄 **Upload do Arquivo CSV**",
+        type=["csv"],
+        help="Selecione o arquivo bolsa_familia.csv"
+    )
     
     st.markdown("---")
-    st.markdown("📥 **Baixar CSV original:**")
-    st.markdown("[Clique aqui](https://drive.google.com/uc?export=download&id=1UXxWqTc6u8_RID_5BbpUI7JLwmgT01ub)")
+    
+    st.markdown("### 📊 Dataset")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Registros", "213.735")
+        st.metric("Colunas", "26")
+    with col2:
+        st.metric("Investimento", "R$ 1B+")
+        st.metric("Período", "2014-2027")
+    
+    st.markdown("---")
+    st.markdown("📥 **Baixar CSV**")
+    st.markdown("[Google Drive](https://drive.google.com/uc?export=download&id=1UXxWqTc6u8_RID_5BbpUI7JLwmgT01ub)")
+
+# ============================================================
+# HEADER
+# ============================================================
+st.markdown("""
+<div class="page-header">
+    <h1>📊 CNPq Analytics</h1>
+    <p>Análise estratégica de investimentos em pesquisa e desenvolvimento no Brasil</p>
+</div>
+""", unsafe_allow_html=True)
 
 # ============================================================
 # MAIN
 # ============================================================
-st.markdown("# 📊 **CNPq Analytics**")
-st.markdown("### *Análise estratégica de bolsas de pesquisa e desenvolvimento no Brasil*")
-
 if uploaded_file is not None:
-    with st.spinner("🔄 Processando 110MB de dados... Isso pode levar alguns segundos"):
+    with st.spinner("🔄 Processando dados..."):
         df = carregar_dados(uploaded_file)
     
     if df is not None and len(df) > 0:
         
-        # ============================================================
-        # FILTROS
-        # ============================================================
+        # ===== FILTROS =====
         st.sidebar.markdown("---")
-        st.sidebar.markdown("### 🎯 **Filtros Interativos**")
+        st.sidebar.markdown("### 🎯 Filtros")
         
         df_filtrado = df.copy()
         
-        # Filtro Região
         if 'regiao_nome' in df.columns:
             regioes = sorted(df['regiao_nome'].dropna().unique())
-            reg_sel = st.sidebar.multiselect("📍 **Região**", regioes, default=regioes)
+            reg_sel = st.sidebar.multiselect("📍 Região", regioes, default=regioes)
             if reg_sel:
                 df_filtrado = df_filtrado[df_filtrado['regiao_nome'].isin(reg_sel)]
         
-        # Filtro Ano
         if 'ano' in df.columns:
             anos = sorted(df['ano'].dropna().unique())
             if len(anos) > 1:
                 ano_min, ano_max = int(min(anos)), int(max(anos))
-                ano_sel = st.sidebar.slider("📅 **Período**", ano_min, ano_max, (ano_min, ano_max))
+                ano_sel = st.sidebar.slider("📅 Período", ano_min, ano_max, (ano_min, ano_max))
                 df_filtrado = df_filtrado[(df_filtrado['ano'] >= ano_sel[0]) & (df_filtrado['ano'] <= ano_sel[1])]
         
-        # Filtro Área
         if 'grande_area' in df.columns:
             areas = sorted(df['grande_area'].dropna().unique())
-            areas_sel = st.sidebar.multiselect("🧬 **Grande Área**", areas, default=areas[:5] if len(areas) > 5 else areas)
+            areas_sel = st.sidebar.multiselect("🧬 Grande Área", areas, default=areas[:5] if len(areas) > 5 else areas)
             if areas_sel:
                 df_filtrado = df_filtrado[df_filtrado['grande_area'].isin(areas_sel)]
         
-        # Status dos filtros
+        # Status
         if df_filtrado.shape[0] < df.shape[0]:
-            st.markdown(f'<div class="filter-info">🔍 **Filtros ativos:** exibindo {df_filtrado.shape[0]:,} de {df.shape[0]:,} registros ({100*df_filtrado.shape[0]/df.shape[0]:.1f}%)</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="status-info">🔍 <strong>{df_filtrado.shape[0]:,}</strong> de <strong>{df.shape[0]:,}</strong> registros ({100*df_filtrado.shape[0]/df.shape[0]:.1f}%)</div>', unsafe_allow_html=True)
         else:
-            st.markdown(f'<div class="status-bar">✅ **Dados carregados:** {df_filtrado.shape[0]:,} registros válidos</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="status-success">✅ <strong>{df_filtrado.shape[0]:,}</strong> registros carregados</div>', unsafe_allow_html=True)
         
-        # ============================================================
-        # KPIs
-        # ============================================================
+        # ===== KPIs =====
         total_val = df_filtrado['valor_pago'].sum()
         media_val = df_filtrado['valor_pago'].mean()
         n_pesq = df_filtrado['beneficiario'].nunique() if 'beneficiario' in df_filtrado.columns else 0
         n_inst = df_filtrado['instituicao_destino'].nunique() if 'instituicao_destino' in df_filtrado.columns else 0
         n_bolsas = df_filtrado.shape[0]
         
+        # Tendências
+        if 'ano' in df_filtrado.columns:
+            inv_ano = df_filtrado.groupby('ano')['valor_pago'].sum()
+            var_total = calcular_tendencia(inv_ano)
+        else:
+            var_total = 0
+        
         col1, col2, col3, col4, col5 = st.columns(5)
         
         with col1:
             st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-icon">💰</div>
-                <div class="metric-title">Investimento Total</div>
-                <div class="metric-value">{fmt_brl(total_val)}</div>
-                <div class="metric-sub">valor consolidado</div>
+            <div class="kpi-card">
+                <div class="kpi-icon">💰</div>
+                <div class="kpi-label">INVESTIMENTO TOTAL</div>
+                <div class="kpi-value">{fmt_brl(total_val)}</div>
+                <div class="kpi-sub">valor consolidado</div>
+                {"<div class='kpi-trend trend-up'>▲ " + f"{var_total:.1f}%" + "</div>" if var_total > 0 else "<div class='kpi-trend trend-down'>▼ " + f"{abs(var_total):.1f}%" + "</div>" if var_total < 0 else ""}
             </div>
             """, unsafe_allow_html=True)
         
         with col2:
             st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-icon">🎓</div>
-                <div class="metric-title">Pesquisadores</div>
-                <div class="metric-value">{fmt_num(n_pesq)}</div>
-                <div class="metric-sub">beneficiários únicos</div>
+            <div class="kpi-card">
+                <div class="kpi-icon">👥</div>
+                <div class="kpi-label">PESQUISADORES</div>
+                <div class="kpi-value">{fmt_num(n_pesq)}</div>
+                <div class="kpi-sub">beneficiários únicos</div>
             </div>
             """, unsafe_allow_html=True)
         
         with col3:
             st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-icon">🏛️</div>
-                <div class="metric-title">Instituições</div>
-                <div class="metric-value">{fmt_num(n_inst)}</div>
-                <div class="metric-sub">unidades atendidas</div>
+            <div class="kpi-card">
+                <div class="kpi-icon">🏛️</div>
+                <div class="kpi-label">INSTITUIÇÕES</div>
+                <div class="kpi-value">{fmt_num(n_inst)}</div>
+                <div class="kpi-sub">unidades atendidas</div>
             </div>
             """, unsafe_allow_html=True)
         
         with col4:
             st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-icon">📊</div>
-                <div class="metric-title">Ticket Médio</div>
-                <div class="metric-value">{fmt_brl(media_val)}</div>
-                <div class="metric-sub">por bolsa</div>
+            <div class="kpi-card">
+                <div class="kpi-icon">📊</div>
+                <div class="kpi-label">TICKET MÉDIO</div>
+                <div class="kpi-value">{fmt_brl(media_val)}</div>
+                <div class="kpi-sub">por bolsa</div>
             </div>
             """, unsafe_allow_html=True)
         
         with col5:
             st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-icon">🎫</div>
-                <div class="metric-title">Total de Bolsas</div>
-                <div class="metric-value">{fmt_num(n_bolsas)}</div>
-                <div class="metric-sub">registros analisados</div>
+            <div class="kpi-card">
+                <div class="kpi-icon">🎫</div>
+                <div class="kpi-label">TOTAL DE BOLSAS</div>
+                <div class="kpi-value">{fmt_num(n_bolsas)}</div>
+                <div class="kpi-sub">registros</div>
             </div>
             """, unsafe_allow_html=True)
         
-        # ============================================================
-        # GRÁFICOS EM TABS
-        # ============================================================
-        tab1, tab2, tab3, tab4 = st.tabs(["📊 Por Área", "🗺️ Por Região", "📈 Evolução Temporal", "🏆 Top Rankings"])
+        # ===== TABS =====
+        tab1, tab2, tab3, tab4 = st.tabs(["📊 Por Área", "🗺️ Por Região", "📈 Evolução", "🏆 Rankings"])
         
-        # TAB 1: Por Área
         with tab1:
             if 'grande_area' in df_filtrado.columns:
                 col1, col2 = st.columns([2, 1])
@@ -434,25 +530,25 @@ if uploaded_file is not None:
                     area_data = df_filtrado.groupby('grande_area')['valor_pago'].sum().sort_values(ascending=False).head(10).reset_index()
                     area_data.columns = ['Área', 'Valor']
                     
-                    fig = px.bar(area_data, x='Área', y='Valor', color='Valor',
-                                color_continuous_scale=['#0A66C2', '#7B8BA4'])
+                    fig = px.bar(area_data, x='Valor', y='Área', orientation='h',
+                                color='Valor', color_continuous_scale=['#6B7A8F', '#0A66C2'],
+                                text='Valor')
                     fig.update_layout(
-                        template="plotly_white", 
-                        height=500, 
-                        paper_bgcolor="#FFFFFF", 
-                        plot_bgcolor="#F8FAFC",
-                        font=dict(color="#1E2A3A")
+                        template="plotly_white",
+                        height=500,
+                        margin=dict(l=20, r=20, t=40, b=20),
+                        xaxis_title="Investimento (R$)",
+                        yaxis_title=""
                     )
-                    fig.update_traces(texttemplate='R$ %{y:,.0f}', textposition='outside')
+                    fig.update_traces(texttemplate='R$ %{x:,.0f}', textposition='outside')
                     st.plotly_chart(fig, use_container_width=True)
                 
                 with col2:
-                    st.markdown("#### 🔢 Detalhamento")
-                    area_data['Valor Formatado'] = area_data['Valor'].apply(fmt_brl)
-                    area_data['%'] = (area_data['Valor'] / area_data['Valor'].sum() * 100).round(1).astype(str) + '%'
-                    st.dataframe(area_data[['Área', 'Valor Formatado', '%']].head(10), use_container_width=True, hide_index=True)
+                    st.markdown("#### 📋 Detalhamento")
+                    area_data['Valor'] = area_data['Valor'].apply(fmt_brl)
+                    area_data['%'] = (area_data['Valor'].apply(lambda x: float(x.replace('R$', '').replace('M', '').replace('B', '').replace(',', '.').strip()) if 'M' in x else 0))
+                    st.dataframe(area_data[['Área', 'Valor']], use_container_width=True, hide_index=True)
         
-        # TAB 2: Por Região
         with tab2:
             if 'regiao_nome' in df_filtrado.columns:
                 col1, col2 = st.columns(2)
@@ -464,102 +560,60 @@ if uploaded_file is not None:
                     fig2 = px.bar(reg_data, x='Região', y='Valor', color='Valor',
                                  color_continuous_scale='Blues', text='Valor')
                     fig2.update_layout(
-                        template="plotly_white", 
-                        height=450, 
-                        paper_bgcolor="#FFFFFF", 
-                        plot_bgcolor="#F8FAFC",
-                        font=dict(color="#1E2A3A")
+                        template="plotly_white",
+                        height=450,
+                        margin=dict(l=20, r=20, t=40, b=20)
                     )
                     fig2.update_traces(texttemplate='R$ %{y:,.0f}', textposition='outside')
                     st.plotly_chart(fig2, use_container_width=True)
                 
                 with col2:
-                    fig3 = px.pie(reg_data, values='Valor', names='Região', hole=0.4,
-                                 color_discrete_sequence=['#0A66C2', '#7B8BA4', '#057642', '#DF7042', '#6B7A8A', '#1E2A3A'])
+                    fig3 = px.pie(reg_data, values='Valor', names='Região', hole=0.35,
+                                 color_discrete_sequence=['#0A66C2', '#7C3AED', '#057642', '#DF7042', '#6B7A8F'])
                     fig3.update_layout(
-                        template="plotly_white", 
-                        height=450, 
-                        paper_bgcolor="#FFFFFF", 
-                        plot_bgcolor="#FFFFFF",
-                        font=dict(color="#1E2A3A")
+                        template="plotly_white",
+                        height=450,
+                        margin=dict(l=20, r=20, t=40, b=20)
                     )
                     fig3.update_traces(textposition='inside', textinfo='percent+label')
                     st.plotly_chart(fig3, use_container_width=True)
-                
-                st.markdown("#### 🔥 Concentração de Investimento")
-                reg_data['Percentual'] = (reg_data['Valor'] / reg_data['Valor'].sum() * 100).round(1)
-                st.dataframe(reg_data, use_container_width=True, hide_index=True)
         
-        # TAB 3: Evolução Temporal
         with tab3:
             if 'ano' in df_filtrado.columns:
-                inv_ano = df_filtrado.groupby('ano')['valor_pago'].agg(['sum', 'count']).reset_index()
-                inv_ano.columns = ['Ano', 'Total', 'Quantidade']
+                inv_ano = df_filtrado.groupby('ano')['valor_pago'].sum().reset_index()
                 inv_ano = inv_ano.dropna()
                 
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    fig4 = px.line(inv_ano, x='Ano', y='Total', markers=True,
-                                  title='💰 Evolução do Investimento Total')
+                if len(inv_ano) > 1:
+                    fig4 = px.area(inv_ano, x='ano', y='valor_pago', markers=True,
+                                  title='Evolução do Investimento Total')
                     fig4.update_layout(
-                        template="plotly_white", 
-                        height=400, 
-                        paper_bgcolor="#FFFFFF", 
-                        plot_bgcolor="#F8FAFC",
-                        font=dict(color="#1E2A3A")
+                        template="plotly_white",
+                        height=450,
+                        margin=dict(l=20, r=20, t=50, b=20)
                     )
-                    fig4.update_traces(line=dict(width=3, color='#0A66C2'), marker=dict(size=8, color='#0A66C2'))
+                    fig4.update_traces(line=dict(width=2, color='#0A66C2'), 
+                                      marker=dict(size=6, color='#0A66C2'),
+                                      fillcolor='rgba(10,102,194,0.1)')
                     st.plotly_chart(fig4, use_container_width=True)
-                
-                with col2:
-                    fig5 = px.bar(inv_ano, x='Ano', y='Quantidade',
-                                 title='📊 Evolução do Número de Bolsas', color='Quantidade',
-                                 color_continuous_scale='Greens')
-                    fig5.update_layout(
-                        template="plotly_white", 
-                        height=400, 
-                        paper_bgcolor="#FFFFFF", 
-                        plot_bgcolor="#F8FAFC",
-                        font=dict(color="#1E2A3A")
-                    )
-                    st.plotly_chart(fig5, use_container_width=True)
-                
-                if len(inv_ano) >= 2:
-                    var_total = ((inv_ano['Total'].iloc[-1] - inv_ano['Total'].iloc[-2]) / inv_ano['Total'].iloc[-2] * 100)
-                    var_quant = ((inv_ano['Quantidade'].iloc[-1] - inv_ano['Quantidade'].iloc[-2]) / inv_ano['Quantidade'].iloc[-2] * 100)
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric("📈 Variação do Investimento", f"{var_total:+.1f}%", 
-                                 delta_color="normal" if var_total > 0 else "inverse")
-                    with col2:
-                        st.metric("📊 Variação de Bolsas", f"{var_quant:+.1f}%",
-                                 delta_color="normal" if var_quant > 0 else "inverse")
         
-        # TAB 4: Top Rankings
         with tab4:
             col1, col2 = st.columns(2)
             
             with col1:
                 st.markdown("#### 🏆 Top 10 Pesquisadores")
-                if 'beneficiario' in df_filtrado.columns and 'valor_pago' in df_filtrado.columns:
-                    top_benef = df_filtrado.groupby('beneficiario')['valor_pago'].sum().sort_values(ascending=False).head(10).reset_index()
-                    top_benef.columns = ['Pesquisador', 'Total']
-                    top_benef['Total'] = top_benef['Total'].apply(fmt_brl)
-                    st.dataframe(top_benef, use_container_width=True, hide_index=True)
-                else:
-                    st.info("Dados de beneficiário não disponíveis")
+                if 'beneficiario' in df_filtrado.columns:
+                    top_pesq = df_filtrado.groupby('beneficiario')['valor_pago'].sum().sort_values(ascending=False).head(10).reset_index()
+                    top_pesq.columns = ['Pesquisador', 'Total']
+                    top_pesq['Total'] = top_pesq['Total'].apply(fmt_brl)
+                    st.dataframe(top_pesq, use_container_width=True, hide_index=True)
             
             with col2:
                 st.markdown("#### 🏛️ Top 10 Instituições")
-                if 'instituicao_destino' in df_filtrado.columns and 'valor_pago' in df_filtrado.columns:
+                if 'instituicao_destino' in df_filtrado.columns:
                     top_inst = df_filtrado.groupby('instituicao_destino')['valor_pago'].sum().sort_values(ascending=False).head(10).reset_index()
                     top_inst.columns = ['Instituição', 'Total']
                     top_inst['Total'] = top_inst['Total'].apply(fmt_brl)
                     st.dataframe(top_inst, use_container_width=True, hide_index=True)
-                else:
-                    st.info("Dados de instituição não disponíveis")
             
             st.markdown("#### 🎓 Top 10 Modalidades")
             if 'modalidade' in df_filtrado.columns:
@@ -567,24 +621,28 @@ if uploaded_file is not None:
                 top_mod.columns = ['Modalidade', 'Quantidade']
                 st.dataframe(top_mod, use_container_width=True, hide_index=True)
         
-        # ============================================================
-        # INSIGHTS AVANÇADOS
-        # ============================================================
-        st.markdown('<div class="section-header"><h2>🔍 Insights Estratégicos</h2><span class="section-tag">Análise</span></div>', unsafe_allow_html=True)
+        # ===== INSIGHTS =====
+        st.markdown("""
+        <div class="section-header">
+            <h2>🔍 Insights Estratégicos</h2>
+            <span class="section-badge">Análise Avançada</span>
+        </div>
+        """, unsafe_allow_html=True)
         
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3 = st.columns(3)
         
         with col1:
             if 'regiao_nome' in df_filtrado.columns:
                 inv_reg = df_filtrado.groupby('regiao_nome')['valor_pago'].sum()
                 if len(inv_reg) > 0:
                     top_reg = inv_reg.idxmax()
-                    pct = 100 * inv_reg.max() / df_filtrado['valor_pago'].sum()
+                    pct = 100 * inv_reg.max() / total_val
                     st.markdown(f"""
                     <div class="insight-card">
-                        <h4>📍 Concentração Regional</h4>
-                        <p>A região <b>{top_reg}</b> concentra <b>{pct:.1f}%</b> do investimento total.</p>
-                        <div class="insight-value">{fmt_brl(inv_reg.max())}</div>
+                        <div class="insight-icon">📍</div>
+                        <div class="insight-title">Concentração Regional</div>
+                        <div class="insight-value">{top_reg}</div>
+                        <div class="insight-desc"><strong>{pct:.1f}%</strong> do investimento total</div>
                     </div>
                     """, unsafe_allow_html=True)
         
@@ -593,136 +651,110 @@ if uploaded_file is not None:
                 inv_area = df_filtrado.groupby('grande_area')['valor_pago'].sum()
                 if len(inv_area) > 0:
                     top_area = inv_area.idxmax()
-                    pct = 100 * inv_area.max() / df_filtrado['valor_pago'].sum()
+                    pct = 100 * inv_area.max() / total_val
                     st.markdown(f"""
                     <div class="insight-card">
-                        <h4>🧬 Área Líder</h4>
-                        <p>A área <b>{top_area}</b> lidera o investimento com <b>{pct:.1f}%</b> dos recursos.</p>
-                        <div class="insight-value">{fmt_brl(inv_area.max())}</div>
+                        <div class="insight-icon">🧬</div>
+                        <div class="insight-title">Área Líder</div>
+                        <div class="insight-value">{top_area}</div>
+                        <div class="insight-desc"><strong>{pct:.1f}%</strong> dos recursos</div>
                     </div>
                     """, unsafe_allow_html=True)
         
         with col3:
-            if 'ano' in df_filtrado.columns:
-                inv_ano = df_filtrado.groupby('ano')['valor_pago'].sum()
-                if len(inv_ano) >= 2:
-                    var = ((inv_ano.iloc[-1] - inv_ano.iloc[-2]) / inv_ano.iloc[-2] * 100)
-                    cor = "📈" if var > 0 else "📉"
-                    st.markdown(f"""
-                    <div class="insight-card">
-                        <h4>📊 Variação Anual</h4>
-                        <p>De <b>{int(inv_ano.index[-2])}</b> para <b>{int(inv_ano.index[-1])}</b>: <b style="color:{'#057642' if var>0 else '#DF7042'}">{var:+.1f}%</b></p>
-                        <div class="insight-value">{cor} {fmt_brl(abs(inv_ano.iloc[-1] - inv_ano.iloc[-2]))}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+            if 'ano' in df_filtrado.columns and len(inv_ano) >= 2:
+                var = ((inv_ano['valor_pago'].iloc[-1] - inv_ano['valor_pago'].iloc[-2]) / inv_ano['valor_pago'].iloc[-2] * 100)
+                st.markdown(f"""
+                <div class="insight-card">
+                    <div class="insight-icon">📈</div>
+                    <div class="insight-title">Variação Anual</div>
+                    <div class="insight-value">{var:+.1f}%</div>
+                    <div class="insight-desc">de {int(inv_ano['ano'].iloc[-2])} para {int(inv_ano['ano'].iloc[-1])}</div>
+                </div>
+                """, unsafe_allow_html=True)
         
-        with col4:
-            if 'regiao_nome' in df_filtrado.columns:
-                inv_reg = df_filtrado.groupby('regiao_nome')['valor_pago'].sum()
-                inv_reg = inv_reg[inv_reg > 0]
-                if len(inv_reg) >= 2:
-                    razao = inv_reg.max() / inv_reg.min()
-                    st.markdown(f"""
-                    <div class="insight-card">
-                        <h4>⚖️ Desigualdade Regional</h4>
-                        <p>Região mais financiada recebe <b>{razao:.1f}x</b> mais que a menos financiada.</p>
-                        <div class="insight-value">Diferença de {fmt_brl(inv_reg.max() - inv_reg.min())}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-        
-        # ============================================================
-        # EXPORTAÇÃO
-        # ============================================================
-        st.markdown('<div class="section-header"><h2>📥 Exportar Dados</h2><span class="section-tag">Download</span></div>', unsafe_allow_html=True)
+        # ===== EXPORTAÇÃO =====
+        st.markdown("""
+        <div class="section-header">
+            <h2>📥 Exportar Dados</h2>
+            <span class="section-badge">Download</span>
+        </div>
+        """, unsafe_allow_html=True)
         
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            csv_data = df_filtrado.to_csv(index=False, sep=';', decimal=',')
-            st.download_button("📄 **CSV** - Dados filtrados", csv_data, f"cnpq_dados_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
+            csv_data = df_filtrado.to_csv(index=False, sep=';')
+            st.download_button("📄 Exportar CSV", csv_data, f"cnpq_dados_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
         
         with col2:
             relatorio = f"""
-            ========================================
-            RELATÓRIO CNPq ANALYTICS
-            ========================================
-            Data: {datetime.now().strftime('%d/%m/%Y %H:%M')}
-            
-            INDICADORES PRINCIPAIS:
-            - Investimento Total: {fmt_brl(total_val)}
-            - Total de Pesquisadores: {fmt_num(n_pesq)}
-            - Total de Instituições: {fmt_num(n_inst)}
-            - Ticket Médio: {fmt_brl(media_val)}
-            - Total de Bolsas: {fmt_num(n_bolsas)}
-            
-            FILTROS APLICADOS:
-            - Registros: {fmt_num(df_filtrado.shape[0])} / {fmt_num(df.shape[0])}
-            
-            ========================================
+RELATÓRIO CNPq ANALYTICS
+Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}
+
+INDICADORES:
+- Investimento: {fmt_brl(total_val)}
+- Pesquisadores: {fmt_num(n_pesq)}
+- Instituições: {fmt_num(n_inst)}
+- Ticket Médio: {fmt_brl(media_val)}
+- Total de Bolsas: {fmt_num(n_bolsas)}
+
+PERÍODO: {int(df_filtrado['ano'].min()) if 'ano' in df_filtrado.columns else 'N/A'} - {int(df_filtrado['ano'].max()) if 'ano' in df_filtrado.columns else 'N/A'}
             """
-            st.download_button("📝 **Relatório** - Resumo executivo", relatorio, f"cnpq_relatorio_{datetime.now().strftime('%Y%m%d')}.txt", "text/plain")
+            st.download_button("📝 Exportar Relatório", relatorio, f"relatorio_{datetime.now().strftime('%Y%m%d')}.txt", "text/plain")
         
         with col3:
             st.markdown(f"""
-            <div style="background:#F3F6F8; padding:15px; border-radius:12px; text-align:center; border:1px solid #E1E5E8;">
-                <span style="color:#6B7A8A; font-size:12px;">📊 Período analisado</span><br>
-                <span style="color:#1E2A3A; font-weight:bold;">
-                    {int(df_filtrado['ano'].min()) if 'ano' in df_filtrado.columns else 'N/A'} - 
-                    {int(df_filtrado['ano'].max()) if 'ano' in df_filtrado.columns else 'N/A'}
+            <div style="background:#F4F6F9; padding:12px; border-radius:12px; text-align:center;">
+                <span style="color:#6B7A8F; font-size:12px;">📊 Período</span><br>
+                <span style="color:#1D2B3E; font-weight:700; font-size:16px;">
+                    {int(df_filtrado['ano'].min()) if 'ano' in df_filtrado.columns else 'N/A'} - {int(df_filtrado['ano'].max()) if 'ano' in df_filtrado.columns else 'N/A'}
                 </span>
             </div>
             """, unsafe_allow_html=True)
         
-        # ============================================================
-        # DADOS TABULARES
-        # ============================================================
-        with st.expander("🗂️ **Visualizar Dados Detalhados**", expanded=False):
-            colunas_exibir = [c for c in df_filtrado.columns if c not in ['ano', 'mes']][:15]
-            st.dataframe(df_filtrado[colunas_exibir].head(500), use_container_width=True, height=400)
-            st.caption(f"Exibindo 500 linhas de {df_filtrado.shape[0]:,} registros")
+        # ===== DADOS DETALHADOS =====
+        with st.expander("🗂️ Visualizar Dados Detalhados"):
+            cols_to_show = [c for c in df_filtrado.columns if c not in ['ano', 'mes']][:12]
+            st.dataframe(df_filtrado[cols_to_show].head(500), use_container_width=True, height=400)
+            st.caption(f"Exibindo 500 de {df_filtrado.shape[0]:,} registros")
         
-        # ============================================================
-        # RODAPÉ
-        # ============================================================
+        # ===== FOOTER =====
         st.markdown(f"""
-        <div class="page-footer">
-            <b>CNPq Analytics</b> · Desenvolvido com Streamlit & Plotly · Fonte: CNPq/Governo Federal<br>
-            Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}
+        <div class="footer">
+            🔬 CNPq Analytics · Desenvolvido com Streamlit & Plotly · Fonte: CNPq/Governo Federal<br>
+            📅 Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}
         </div>
         """, unsafe_allow_html=True)
     
     else:
-        st.error("❌ **Erro ao carregar o arquivo.** Verifique se é um CSV válido com separador ';' e encoding latin1/UTF-8.")
+        st.error("❌ Erro ao carregar o arquivo. Verifique o formato.")
 else:
-    st.info("👈 **Faça upload do arquivo CSV no menu lateral para começar sua análise!**")
+    st.info("👈 **Faça upload do arquivo CSV no menu lateral para começar**")
     
     st.markdown("""
-    ---
-    ### 📋 **Sobre o Dashboard**
-    
-    | Característica | Descrição |
-    |----------------|-----------|
-    | **Dados analisados** | 213.735 bolsas de pesquisa do CNPq |
-    | **Período** | 2014 - 2027 |
-    | **Investimento total** | Mais de R$ 1 bilhão |
-    | **Áreas do conhecimento** | 12 grandes áreas |
-    | **Instituições atendidas** | Mais de 4.000 |
-    
-    ### 🚀 **Funcionalidades**
-    
-    - ✅ Filtros interativos por região, período e área
-    - ✅ Gráficos dinâmicos com Plotly
-    - ✅ Tabelas de ranking (pesquisadores, instituições)
-    - ✅ Análise de evolução temporal
-    - ✅ Exportação em CSV e relatório TXT
-    - ✅ Insights automáticos sobre concentração e desigualdade
-    
-    ### 📥 **Como começar**
-    
-    1. Baixe o CSV original usando o link no menu lateral
-    2. Faça o upload do arquivo
-    3. Explore os filtros e visualizações
-    """)
+    <div style="background:#FFFFFF; border-radius:16px; padding:30px; margin-top:20px; border:1px solid #E4E8ED;">
+        <h3 style="color:#1D2B3E;">📋 Sobre o Dashboard</h3>
+        <p>Este dashboard analisa <strong>213.735 bolsas de pesquisa</strong> do CNPq, totalizando mais de <strong>R$ 1 bilhão</strong> em investimentos.</p>
+        
+        <h4 style="color:#1D2B3E; margin-top:20px;">🚀 Funcionalidades</h4>
+        <ul>
+            <li>✅ Filtros interativos por região, período e área</li>
+            <li>✅ Gráficos dinâmicos com Plotly</li>
+            <li>✅ Rankings de pesquisadores e instituições</li>
+            <li>✅ Análise de evolução temporal</li>
+            <li>✅ Exportação em CSV e relatório TXT</li>
+            <li>✅ Insights automáticos</li>
+        </ul>
+        
+        <h4 style="color:#1D2B3E; margin-top:20px;">📥 Como começar</h4>
+        <ol>
+            <li>Baixe o CSV original usando o link no menu lateral</li>
+            <li>Faça o upload do arquivo</li>
+            <li>Explore os filtros e visualizações</li>
+        </ol>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ============================================================
 # FIM
