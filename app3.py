@@ -17,7 +17,7 @@ st.set_page_config(
 )
 
 # ============================================================
-# CSS LINKEDIN MODERNO
+# CSS COMPLETO
 # ============================================================
 st.markdown("""
 <style>
@@ -35,7 +35,6 @@ section[data-testid="stSidebar"] {
 section[data-testid="stSidebar"] * {
     color: #1A2B4C !important;
 }
-
 .sidebar-header {
     text-align: center;
     padding: 0 0 24px 0;
@@ -53,7 +52,7 @@ section[data-testid="stSidebar"] * {
     margin-top: 6px;
 }
 
-/* Hero Section */
+/* Hero */
 .hero {
     background: linear-gradient(135deg, #0A66C2 0%, #004182 100%);
     border-radius: 20px;
@@ -79,7 +78,6 @@ section[data-testid="stSidebar"] * {
     padding: 6px 14px;
     border-radius: 30px;
     font-size: 12px;
-    font-weight: 500;
     margin-top: 20px;
     color: white;
 }
@@ -179,6 +177,7 @@ section[data-testid="stSidebar"] * {
     font-weight: 700;
     color: #0A66C2;
     font-size: 14px;
+    flex-shrink: 0;
 }
 .step-content h4 {
     font-size: 14px;
@@ -192,29 +191,31 @@ section[data-testid="stSidebar"] * {
     margin: 0;
 }
 
-/* Botões */
-.stDownloadButton button {
-    background: #0A66C2 !important;
-    color: white !important;
-    border-radius: 24px !important;
-    padding: 8px 20px !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    width: 100% !important;
-    border: none !important;
+/* Info Cards */
+.info-grid {
+    display: flex;
+    gap: 16px;
+    margin-top: 20px;
+    flex-wrap: wrap;
 }
-
-/* Footer */
-.footer {
-    text-align: center;
-    padding: 30px 20px 20px;
-    margin-top: 40px;
-    border-top: 1px solid #E8ECF0;
+.info-card {
+    flex: 1;
+    min-width: 180px;
+    background: #F5F7FA;
+    border-radius: 12px;
+    padding: 16px;
+}
+.info-card strong {
+    color: #1A2B4C;
+    font-size: 14px;
+}
+.info-card p {
     color: #6B7A8F;
-    font-size: 11px;
+    font-size: 12px;
+    margin-top: 6px;
 }
 
-/* Status */
+/* Status Bar */
 .status-bar {
     background: #E8F4FD;
     border-left: 4px solid #0A66C2;
@@ -223,24 +224,6 @@ section[data-testid="stSidebar"] * {
     margin: 15px 0 20px 0;
     font-size: 13px;
     color: #1A2B4C;
-}
-
-/* Tabs */
-.stTabs [data-baseweb="tab-list"] {
-    gap: 8px;
-    background: transparent;
-}
-.stTabs [data-baseweb="tab"] {
-    background: #FFFFFF;
-    border-radius: 10px;
-    padding: 8px 20px;
-    color: #6B7A8F;
-    border: 1px solid #E8ECF0;
-}
-.stTabs [aria-selected="true"] {
-    background: #0A66C2;
-    color: white;
-    border: none;
 }
 
 /* KPIs */
@@ -341,6 +324,53 @@ section[data-testid="stSidebar"] * {
     border-radius: 20px;
     font-size: 11px;
     color: #0A66C2;
+}
+
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+    background: transparent;
+}
+.stTabs [data-baseweb="tab"] {
+    background: #FFFFFF;
+    border-radius: 10px;
+    padding: 8px 20px;
+    color: #6B7A8F;
+    border: 1px solid #E8ECF0;
+}
+.stTabs [aria-selected="true"] {
+    background: #0A66C2;
+    color: white;
+    border: none;
+}
+
+/* Botões */
+.stDownloadButton button {
+    background: #0A66C2 !important;
+    color: white !important;
+    border-radius: 24px !important;
+    padding: 8px 20px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    width: 100% !important;
+    border: none !important;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 30px 20px 20px;
+    margin-top: 40px;
+    border-top: 1px solid #E8ECF0;
+    color: #6B7A8F;
+    font-size: 11px;
+}
+
+/* Expander */
+.streamlit-expanderHeader {
+    background: #FFFFFF;
+    border-radius: 10px;
+    border: 1px solid #E8ECF0;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -452,7 +482,7 @@ if uploaded_file is not None:
             if areas_sel:
                 df_filtrado = df_filtrado[df_filtrado['grande_area'].isin(areas_sel)]
         
-        # Status
+        # STATUS
         if df_filtrado.shape[0] < df.shape[0]:
             st.markdown(f'<div class="status-bar">🔍 <strong>{df_filtrado.shape[0]:,}</strong> de <strong>{df.shape[0]:,}</strong> registros ({100*df_filtrado.shape[0]/df.shape[0]:.1f}%)</div>', unsafe_allow_html=True)
         else:
@@ -460,6 +490,7 @@ if uploaded_file is not None:
         
         # KPIs
         total_val = df_filtrado['valor_pago'].sum()
+        media_val = df_filtrado['valor_pago'].mean()
         n_pesq = df_filtrado['beneficiario'].nunique() if 'beneficiario' in df_filtrado.columns else 0
         n_inst = df_filtrado['instituicao_destino'].nunique() if 'instituicao_destino' in df_filtrado.columns else 0
         n_bolsas = df_filtrado.shape[0]
@@ -502,9 +533,9 @@ if uploaded_file is not None:
             st.markdown(f"""
             <div class="kpi-card">
                 <div class="kpi-icon">🎫</div>
-                <div class="kpi-label">BOLSAS</div>
-                <div class="kpi-number">{fmt_num(n_bolsas)}</div>
-                <div class="kpi-sub">total de registros</div>
+                <div class="kpi-label">TICKET MÉDIO</div>
+                <div class="kpi-number">{fmt_brl(media_val)}</div>
+                <div class="kpi-sub">por bolsa</div>
             </div>
             """, unsafe_allow_html=True)
         
@@ -637,7 +668,10 @@ INDICADORES:
 - Investimento: {fmt_brl(total_val)}
 - Pesquisadores: {fmt_num(n_pesq)}
 - Instituições: {fmt_num(n_inst)}
+- Ticket Médio: {fmt_brl(media_val)}
 - Total de Bolsas: {fmt_num(n_bolsas)}
+
+PERÍODO: {int(df_filtrado['ano'].min()) if 'ano' in df_filtrado.columns else 'N/A'} - {int(df_filtrado['ano'].max()) if 'ano' in df_filtrado.columns else 'N/A'}
 """
             st.download_button("📝 Exportar Relatório", relatorio, f"relatorio_{datetime.now().strftime('%Y%m%d')}.txt", "text/plain")
         
@@ -660,10 +694,10 @@ INDICADORES:
 
 else:
     # ============================================================
-    # TELA INICIAL MELHORADA
+    # TELA INICIAL - CORRIGIDA (sem bug de HTML)
     # ============================================================
     
-    # Hero Section
+    # Hero
     st.markdown("""
     <div class="hero">
         <h1>🔬 CNPq Analytics</h1>
@@ -693,7 +727,7 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # Stats Preview
+    # Stats
     st.markdown("""
     <div class="stats-grid">
         <div class="stat-card">
@@ -719,7 +753,7 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # Como usar - Passo a passo
+    # Steps
     st.markdown("""
     <div class="steps-container">
         <h3 style="color:#1A2B4C; margin-bottom: 20px;">🚀 Como começar</h3>
@@ -758,33 +792,34 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # Dados analisados
+    # Info dados
     st.markdown("""
     <div style="background:#FFFFFF; border-radius:16px; padding:24px; margin-top:20px; border:1px solid #E8ECF0;">
         <h3 style="color:#1A2B4C; margin-bottom: 16px;">📋 Sobre os dados analisados</h3>
         <p style="color:#6B7A8F; margin-bottom: 16px;">Este dashboard processa dados públicos do CNPq sobre bolsas de pesquisa, abrangendo:</p>
-        <div style="display: flex; flex-wrap: wrap; gap: 16px;">
-            <div style="flex: 1; min-width: 180px; background:#F5F7FA; border-radius:12px; padding:12px;">
-                <strong style="color:#1A2B4C;">🎓 213.735 bolsas</strong>
-                <p style="color:#6B7A8F; font-size:12px; margin-top:4px;">Iniciação científica, mestrado, doutorado e pós-doutorado</p>
+        
+        <div class="info-grid">
+            <div class="info-card">
+                <strong>🎓 213.735 bolsas</strong>
+                <p>Iniciação científica, mestrado, doutorado e pós-doutorado</p>
             </div>
-            <div style="flex: 1; min-width: 180px; background:#F5F7FA; border-radius:12px; padding:12px;">
-                <strong style="color:#1A2B4C;">🧬 12 áreas do conhecimento</strong>
-                <p style="color:#6B7A8F; font-size:12px; margin-top:4px;">Saúde, Engenharia, Humanas, Agrárias e mais</p>
+            <div class="info-card">
+                <strong>🧬 12 áreas do conhecimento</strong>
+                <p>Saúde, Engenharia, Humanas, Agrárias e mais</p>
             </div>
-            <div style="flex: 1; min-width: 180px; background:#F5F7FA; border-radius:12px; padding:12px;">
-                <strong style="color:#1A2B4C;">📍 5 regiões + Exterior</strong>
-                <p style="color:#6B7A8F; font-size:12px; margin-top:4px;">Distribuição geográfica completa</p>
+            <div class="info-card">
+                <strong>📍 5 regiões + Exterior</strong>
+                <p>Distribuição geográfica completa</p>
             </div>
-            <div style="flex: 1; min-width: 180px; background:#F5F7FA; border-radius:12px; padding:12px;">
-                <strong style="color:#1A2B4C;">📅 2014 a 2027</strong>
-                <p style="color:#6B7A8F; font-size:12px; margin-top:4px;">Série histórica de 14 anos</p>
+            <div class="info-card">
+                <strong>📅 2014 a 2027</strong>
+                <p>Série histórica de 14 anos</p>
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
     
-    # FOOTER
+    # Footer
     st.markdown("""
     <div class="footer">
         🔬 CNPq Analytics · Desenvolvido com Streamlit & Plotly · Fonte: CNPq/Governo Federal<br>
