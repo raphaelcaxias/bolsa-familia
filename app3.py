@@ -269,17 +269,17 @@ if uploaded_file is not None:
         # TABS
         tab1, tab2, tab3, tab4 = st.tabs(["📊 Por Área", "🗺️ Por Região", "📈 Evolução", "🏆 Rankings"])
         
+        # ============================================================
+        # TAB 1: POR ÁREA (COM VERIFICAÇÃO)
+        # ============================================================
         with tab1:
             if 'grande_area' in df_filtrado.columns:
-                col1, col2 = st.columns([2, 1])
+                area_data = df_filtrado.groupby('grande_area')['valor_pago'].sum().sort_values(ascending=False).head(10).reset_index()
+                area_data.columns = ['Área', 'Valor']
                 
-                with col1:
-                    area_data = df_filtrado.groupby('grande_area')['valor_pago'].sum().sort_values(ascending=False).head(10).reset_index()
-                    area_data.columns = ['Área', 'Valor']
-                    
-                    # GRÁFICO MELHORADO
-                    fig = go.Figure()
-                    fig.add_trace(go.Bar(
+                if len(area_data) > 0:
+                    fig1 = go.Figure()
+                    fig1.add_trace(go.Bar(
                         x=area_data['Valor'],
                         y=area_data['Área'],
                         orientation='h',
@@ -289,54 +289,86 @@ if uploaded_file is not None:
                         hovertemplate='<b>%{y}</b><br>%{customdata}<extra></extra>',
                         customdata=area_data['Valor'].apply(lambda x: fmt_brl(x))
                     ))
-                    fig.update_layout(
+                    
+                    fig1.update_layout(
                         title="Top 10 Áreas do Conhecimento",
                         xaxis_title="Investimento (R$)",
-                        height=500, margin=dict(l=20, r=20, t=50, b=20),
-                        plot_bgcolor='white', paper_bgcolor='white',
+                        yaxis_title="",
+                        height=500,
+                        margin=dict(l=20, r=20, t=50, b=20),
+                        plot_bgcolor='white',
+                        paper_bgcolor='white',
                         font=dict(color='#1A2B4C')
                     )
-                    fig.update_xaxis(gridcolor='#E8ECF0', tickformat=',.0f')
-                    st.plotly_chart(fig, use_container_width=True)
-                
-                with col2:
-                    area_show = area_data.copy()
-                    area_show['Valor'] = area_show['Valor'].apply(fmt_brl)
-                    st.dataframe(area_show[['Área', 'Valor']], use_container_width=True, hide_index=True)
+                    fig1.update_xaxis(gridcolor='#E8ECF0', tickformat=',.0f')
+                    fig1.update_yaxis(gridcolor='#E8ECF0')
+                    st.plotly_chart(fig1, use_container_width=True)
+                    
+                    # Tabela ao lado
+                    col1, col2 = st.columns([2, 1])
+                    with col2:
+                        area_show = area_data.copy()
+                        area_show['Valor'] = area_show['Valor'].apply(fmt_brl)
+                        st.dataframe(area_show[['Área', 'Valor']], use_container_width=True, hide_index=True)
+                else:
+                    st.info("Nenhum dado disponível para a coluna 'grande_area'")
+            else:
+                st.info("Coluna 'grande_area' não encontrada no arquivo CSV")
         
+        # ============================================================
+        # TAB 2: POR REGIÃO (COM VERIFICAÇÃO)
+        # ============================================================
         with tab2:
             if 'regiao_nome' in df_filtrado.columns:
-                col1, col2 = st.columns(2)
+                reg_data = df_filtrado.groupby('regiao_nome')['valor_pago'].sum().reset_index()
+                reg_data.columns = ['Região', 'Valor']
                 
-                with col1:
-                    reg_data = df_filtrado.groupby('regiao_nome')['valor_pago'].sum().reset_index()
-                    reg_data.columns = ['Região', 'Valor']
+                if len(reg_data) > 0:
+                    col1, col2 = st.columns(2)
                     
-                    fig2 = px.bar(reg_data, x='Região', y='Valor', color='Valor', 
-                                 color_continuous_scale='Blues', text='Valor')
-                    fig2.update_layout(template="plotly_white", height=450)
-                    fig2.update_traces(texttemplate='R$ %{y:,.0f}', textposition='outside')
-                    st.plotly_chart(fig2, use_container_width=True)
+                    with col1:
+                        fig2 = px.bar(reg_data, x='Região', y='Valor', color='Valor', 
+                                     color_continuous_scale='Blues', text='Valor')
+                        fig2.update_layout(
+                            template="plotly_white", 
+                            height=450,
+                            title="Investimento por Região",
+                            xaxis_title="Região",
+                            yaxis_title="Investimento (R$)"
+                        )
+                        fig2.update_traces(texttemplate='R$ %{y:,.0f}', textposition='outside')
+                        st.plotly_chart(fig2, use_container_width=True)
+                        
+                        st.markdown("##### 💰 Ticket Médio por Região")
+                        ticket_reg = df_filtrado.groupby('regiao_nome')['valor_pago'].mean().sort_values(ascending=False).reset_index()
+                        ticket_reg.columns = ['Região', 'Ticket Médio']
+                        ticket_reg['Ticket Médio'] = ticket_reg['Ticket Médio'].apply(fmt_brl)
+                        st.dataframe(ticket_reg, use_container_width=True, hide_index=True)
                     
-                    st.markdown("##### 💰 Ticket Médio por Região")
-                    ticket_reg = df_filtrado.groupby('regiao_nome')['valor_pago'].mean().sort_values(ascending=False).reset_index()
-                    ticket_reg.columns = ['Região', 'Ticket Médio']
-                    ticket_reg['Ticket Médio'] = ticket_reg['Ticket Médio'].apply(fmt_brl)
-                    st.dataframe(ticket_reg, use_container_width=True, hide_index=True)
-                
-                with col2:
-                    fig3 = px.pie(reg_data, values='Valor', names='Região', hole=0.35,
-                                 color_discrete_sequence=[COR_PRIMARIA, '#7C3AED', COR_SECUNDARIA, COR_DESTAQUE, '#6B7A8F'])
-                    fig3.update_layout(template="plotly_white", height=450)
-                    fig3.update_traces(textposition='inside', textinfo='percent+label')
-                    st.plotly_chart(fig3, use_container_width=True)
-                    
-                    if 'Sudeste' in reg_data['Região'].values and 'Norte' in reg_data['Região'].values:
-                        sudeste_val = reg_data[reg_data['Região'] == 'Sudeste']['Valor'].values[0]
-                        norte_val = reg_data[reg_data['Região'] == 'Norte']['Valor'].values[0]
-                        diferenca = sudeste_val / norte_val if norte_val > 0 else 0
-                        st.info(f"⚖️ **Sudeste** recebe **{diferenca:.1f}x mais** investimento que **Norte**")
+                    with col2:
+                        fig3 = px.pie(reg_data, values='Valor', names='Região', hole=0.35,
+                                     color_discrete_sequence=[COR_PRIMARIA, '#7C3AED', COR_SECUNDARIA, COR_DESTAQUE, '#6B7A8F'])
+                        fig3.update_layout(
+                            template="plotly_white", 
+                            height=450,
+                            title="Distribuição por Região"
+                        )
+                        fig3.update_traces(textposition='inside', textinfo='percent+label')
+                        st.plotly_chart(fig3, use_container_width=True)
+                        
+                        if 'Sudeste' in reg_data['Região'].values and 'Norte' in reg_data['Região'].values:
+                            sudeste_val = reg_data[reg_data['Região'] == 'Sudeste']['Valor'].values[0]
+                            norte_val = reg_data[reg_data['Região'] == 'Norte']['Valor'].values[0]
+                            diferenca = sudeste_val / norte_val if norte_val > 0 else 0
+                            st.info(f"⚖️ **Sudeste** recebe **{diferenca:.1f}x mais** investimento que **Norte**")
+                else:
+                    st.info("Nenhum dado disponível para a coluna 'regiao_nome'")
+            else:
+                st.info("Coluna 'regiao_nome' não encontrada no arquivo CSV")
         
+        # ============================================================
+        # TAB 3: EVOLUÇÃO (COM VERIFICAÇÃO)
+        # ============================================================
         with tab3:
             if 'ano' in df_filtrado.columns:
                 inv_ano = df_filtrado.groupby('ano')['valor_pago'].sum().reset_index()
@@ -346,19 +378,39 @@ if uploaded_file is not None:
                     col1, col2 = st.columns(2)
                     
                     with col1:
-                        fig4 = px.area(inv_ano, x='ano', y='valor_pago', markers=True)
-                        fig4.update_layout(template="plotly_white", height=400)
+                        fig4 = px.area(inv_ano, x='ano', y='valor_pago', markers=True,
+                                      title="Evolução do Investimento Total")
+                        fig4.update_layout(
+                            template="plotly_white", 
+                            height=400,
+                            xaxis_title="Ano",
+                            yaxis_title="Investimento (R$)"
+                        )
                         fig4.update_traces(line=dict(width=2, color=COR_PRIMARIA), fillcolor='rgba(0,48,135,0.1)')
                         st.plotly_chart(fig4, use_container_width=True)
                     
                     with col2:
-                        fig5 = px.bar(inv_ano, x='ano', y='valor_pago', color='valor_pago', color_continuous_scale='Greens')
-                        fig5.update_layout(template="plotly_white", height=400)
+                        fig5 = px.bar(inv_ano, x='ano', y='valor_pago', color='valor_pago', 
+                                     color_continuous_scale='Greens',
+                                     title="Investimento por Ano")
+                        fig5.update_layout(
+                            template="plotly_white", 
+                            height=400,
+                            xaxis_title="Ano",
+                            yaxis_title="Investimento (R$)"
+                        )
                         st.plotly_chart(fig5, use_container_width=True)
                     
                     var = ((inv_ano['valor_pago'].iloc[-1] - inv_ano['valor_pago'].iloc[-2]) / inv_ano['valor_pago'].iloc[-2] * 100)
                     st.metric("📈 Variação Último Ano", f"{var:+.1f}%", delta_color="normal" if var > 0 else "inverse")
+                else:
+                    st.info("Dados insuficientes para análise temporal (menos de 2 anos disponíveis)")
+            else:
+                st.info("Coluna 'ano' não encontrada no arquivo CSV")
         
+        # ============================================================
+        # TAB 4: RANKINGS (COM VERIFICAÇÃO)
+        # ============================================================
         with tab4:
             col1, col2 = st.columns(2)
             
@@ -375,7 +427,7 @@ if uploaded_file is not None:
                     
                     st.dataframe(top_pesq, use_container_width=True, hide_index=True)
                 else:
-                    st.info("Dados não disponíveis")
+                    st.info("Coluna 'beneficiario' não encontrada")
             
             with col2:
                 st.markdown("#### 🏛️ Top 10 Instituições")
@@ -385,15 +437,19 @@ if uploaded_file is not None:
                     top_inst['Total'] = top_inst['Total'].apply(fmt_brl)
                     st.dataframe(top_inst, use_container_width=True, hide_index=True)
                 else:
-                    st.info("Dados não disponíveis")
+                    st.info("Coluna 'instituicao_destino' não encontrada")
             
             st.markdown("#### 🎓 Top 10 Modalidades")
             if 'modalidade' in df_filtrado.columns:
                 top_mod = df_filtrado['modalidade'].value_counts().head(10).reset_index()
                 top_mod.columns = ['Modalidade', 'Quantidade']
                 st.dataframe(top_mod, use_container_width=True, hide_index=True)
+            else:
+                st.info("Coluna 'modalidade' não encontrada")
         
+        # ============================================================
         # EXPORTAÇÃO
+        # ============================================================
         st.markdown("---")
         st.markdown("### 📥 Exportar Dados")
         
@@ -423,9 +479,13 @@ Bolsas: {fmt_num(n_bolsas)}"""
         """, unsafe_allow_html=True)
     
     else:
-        st.error("❌ Erro ao carregar o arquivo.")
+        st.error("❌ Erro ao carregar o arquivo. Verifique o formato CSV.")
+
 else:
+    # ============================================================
     # TELA INICIAL
+    # ============================================================
+    
     st.info("👈 **Faça upload do arquivo CSV no menu lateral para começar**")
     
     st.markdown("""
@@ -436,36 +496,37 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
+    # Cards alinhados com altura uniforme
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown("""
-        <div style="background: white; border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #E8ECF0;">
-            <div style="font-size: 28px; font-weight: 700; color: #003087;">213.735</div>
+        <div style="background: white; border-radius: 12px; padding: 24px 16px; text-align: center; border: 1px solid #E8ECF0; height: 100%;">
+            <div style="font-size: 32px; font-weight: 700; color: #003087;">213.735</div>
             <div style="font-size: 13px; color: #6B7A8F;">Bolsas</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col2:
         st.markdown("""
-        <div style="background: white; border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #E8ECF0;">
-            <div style="font-size: 28px; font-weight: 700; color: #003087;">R$ 1,02B</div>
+        <div style="background: white; border-radius: 12px; padding: 24px 16px; text-align: center; border: 1px solid #E8ECF0; height: 100%;">
+            <div style="font-size: 32px; font-weight: 700; color: #003087;">R$ 1,02B</div>
             <div style="font-size: 13px; color: #6B7A8F;">Investimento</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col3:
         st.markdown("""
-        <div style="background: white; border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #E8ECF0;">
-            <div style="font-size: 28px; font-weight: 700; color: #003087;">88.079</div>
+        <div style="background: white; border-radius: 12px; padding: 24px 16px; text-align: center; border: 1px solid #E8ECF0; height: 100%;">
+            <div style="font-size: 32px; font-weight: 700; color: #003087;">88.079</div>
             <div style="font-size: 13px; color: #6B7A8F;">Pesquisadores</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col4:
         st.markdown("""
-        <div style="background: white; border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #E8ECF0;">
-            <div style="font-size: 28px; font-weight: 700; color: #003087;">4.281</div>
+        <div style="background: white; border-radius: 12px; padding: 24px 16px; text-align: center; border: 1px solid #E8ECF0; height: 100%;">
+            <div style="font-size: 32px; font-weight: 700; color: #003087;">4.281</div>
             <div style="font-size: 13px; color: #6B7A8F;">Instituições</div>
         </div>
         """, unsafe_allow_html=True)
@@ -488,3 +549,7 @@ else:
         Fonte: Portal Brasileiro de Dados Abertos (CGU/MDS)
     </div>
     """, unsafe_allow_html=True)
+
+# ============================================================
+# FIM
+# ============================================================
