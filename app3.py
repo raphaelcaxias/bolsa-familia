@@ -2,15 +2,12 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
 from datetime import datetime
-from io import BytesIO
 
 # =========================================================
 # CONFIG
 # =========================================================
+
 st.set_page_config(
     page_title="CNPq Analytics PRO",
     page_icon="🔬",
@@ -19,19 +16,9 @@ st.set_page_config(
 )
 
 # =========================================================
-# CORES
-# =========================================================
-PRIMARY = "#0F172A"
-SECONDARY = "#1E293B"
-ACCENT = "#2563EB"
-SUCCESS = "#10B981"
-WARNING = "#F59E0B"
-DANGER = "#EF4444"
-LIGHT = "#F8FAFC"
-
-# =========================================================
 # CSS MODERNO
 # =========================================================
+
 st.markdown("""
 <style>
 
@@ -91,11 +78,6 @@ html, body, [class*="css"] {
     color: #0F172A;
 }
 
-.kpi-delta {
-    font-size: 13px;
-    color: #10B981;
-}
-
 /* INSIGHTS */
 
 .insight-box {
@@ -149,7 +131,8 @@ section[data-testid="stSidebar"] * {
 # =========================================================
 # HEADER
 # =========================================================
-st.markdown(f"""
+
+st.markdown("""
 <div class="main-header">
     <h1>🔬 CNPq Analytics PRO</h1>
     <p>
@@ -163,6 +146,7 @@ st.markdown(f"""
 # =========================================================
 
 def fmt_money(v):
+
     if pd.isna(v):
         return "R$ 0"
 
@@ -176,6 +160,7 @@ def fmt_money(v):
 
 
 def fmt_num(v):
+
     return f"{int(v):,}".replace(",", ".")
 
 
@@ -227,6 +212,7 @@ def load_data(file):
             for d in datas:
 
                 if d in df.columns:
+
                     df[d] = pd.to_datetime(
                         df[d],
                         errors='coerce',
@@ -235,7 +221,11 @@ def load_data(file):
 
             # ano
             if 'data_inicio_processo' in df.columns:
-                df['ano'] = df['data_inicio_processo'].dt.year
+
+                df['ano'] = (
+                    df['data_inicio_processo']
+                    .dt.year
+                )
 
             # status bolsa
             if 'data_termino_processo' in df.columns:
@@ -259,6 +249,7 @@ def load_data(file):
             }
 
             if 'regiao' in df.columns:
+
                 df['regiao_nome'] = (
                     df['regiao']
                     .map(mapa)
@@ -271,7 +262,6 @@ def load_data(file):
             pass
 
     return None
-
 
 # =========================================================
 # SIDEBAR
@@ -396,8 +386,6 @@ if uploaded:
 
         total = df_f['valor_pago'].sum()
 
-        media = df_f['valor_pago'].mean()
-
         bolsas = len(df_f)
 
         pesquisadores = (
@@ -459,7 +447,7 @@ if uploaded:
             )
 
             insights.append(
-                f"📍 Região líder em investimento: <b>{top_reg}</b>"
+                f"📍 Região líder: <b>{top_reg}</b>"
             )
 
         if 'grande_area' in df_f.columns:
@@ -472,18 +460,6 @@ if uploaded:
 
             insights.append(
                 f"🧬 Área mais financiada: <b>{top_area}</b>"
-            )
-
-        if 'instituicao_destino' in df_f.columns:
-
-            top_inst = (
-                df_f.groupby('instituicao_destino')['valor_pago']
-                .sum()
-                .idxmax()
-            )
-
-            insights.append(
-                f"🏛️ Instituição dominante: <b>{top_inst}</b>"
             )
 
         st.markdown(f"""
@@ -505,7 +481,7 @@ if uploaded:
         ])
 
         # =====================================================
-        # TAB 1
+        # VISÃO GERAL
         # =====================================================
 
         with tab1:
@@ -534,11 +510,6 @@ if uploaded:
                         title='Top Áreas Científicas'
                     )
 
-                    fig.update_layout(
-                        height=500,
-                        paper_bgcolor='white'
-                    )
-
                     st.plotly_chart(
                         fig,
                         use_container_width=True
@@ -558,11 +529,8 @@ if uploaded:
                         reg,
                         values='valor_pago',
                         names='regiao_nome',
-                        hole=0.5
-                    )
-
-                    fig2.update_layout(
-                        height=500
+                        hole=0.5,
+                        title='Distribuição Regional'
                     )
 
                     st.plotly_chart(
@@ -571,7 +539,7 @@ if uploaded:
                     )
 
         # =====================================================
-        # TAB 2
+        # REGIÕES
         # =====================================================
 
         with tab2:
@@ -627,7 +595,7 @@ if uploaded:
                 )
 
         # =====================================================
-        # TAB 3
+        # ÁREAS
         # =====================================================
 
         with tab3:
@@ -659,7 +627,7 @@ if uploaded:
                 )
 
         # =====================================================
-        # TAB 4
+        # INSTITUIÇÕES
         # =====================================================
 
         with tab4:
@@ -701,7 +669,7 @@ if uploaded:
                     )
 
         # =====================================================
-        # TAB 5
+        # TENDÊNCIAS
         # =====================================================
 
         with tab5:
@@ -731,22 +699,54 @@ if uploaded:
                     use_container_width=True
                 )
 
-            # status bolsa
+            # palavras frequentes
 
-            if 'status_bolsa' in df_f.columns:
+            if 'titulo_projeto' in df_f.columns:
 
-                status = (
-                    df_f['status_bolsa']
-                    .value_counts()
-                    .reset_index()
+                st.markdown("## 🔎 Tendências Científicas")
+
+                textos = (
+                    df_f['titulo_projeto']
+                    .dropna()
+                    .astype(str)
+                    .str.lower()
                 )
 
-                fig2 = px.pie(
-                    status,
-                    values='count',
-                    names='status_bolsa',
-                    hole=0.4,
-                    title='Status das Bolsas'
+                palavras = (
+                    " ".join(textos)
+                    .replace(",", " ")
+                    .replace(".", " ")
+                    .split()
+                )
+
+                stopwords = [
+                    'de', 'da', 'do', 'das', 'dos',
+                    'em', 'para', 'com', 'por',
+                    'na', 'no', 'e', 'a', 'o'
+                ]
+
+                palavras = [
+                    p for p in palavras
+                    if len(p) > 4 and p not in stopwords
+                ]
+
+                freq = (
+                    pd.Series(palavras)
+                    .value_counts()
+                    .head(20)
+                )
+
+                freq_df = freq.reset_index()
+                freq_df.columns = ['Palavra', 'Frequência']
+
+                fig2 = px.bar(
+                    freq_df,
+                    x='Frequência',
+                    y='Palavra',
+                    orientation='h',
+                    color='Frequência',
+                    color_continuous_scale='Blues',
+                    title='Palavras Mais Frequentes'
                 )
 
                 st.plotly_chart(
@@ -755,45 +755,10 @@ if uploaded:
                 )
 
         # =====================================================
-        # WORDCLOUD
-        # =====================================================
-
-        if 'titulo_projeto' in df_f.columns:
-
-            st.markdown("## ☁️ Tendências Científicas")
-
-            textos = " ".join(
-                df_f['titulo_projeto']
-                .dropna()
-                .astype(str)
-                .tolist()
-            )
-
-            if len(textos) > 10:
-
-                wc = WordCloud(
-                    width=1200,
-                    height=500,
-                    background_color='white'
-                ).generate(textos)
-
-                fig, ax = plt.subplots(
-                    figsize=(15,6)
-                )
-
-                ax.imshow(wc)
-
-                ax.axis('off')
-
-                st.pyplot(fig)
-
-        # =====================================================
-        # EXPORTAÇÃO
+        # EXPORTAR
         # =====================================================
 
         st.markdown("---")
-
-        st.subheader("📥 Exportar")
 
         csv = df_f.to_csv(
             index=False,
@@ -801,7 +766,7 @@ if uploaded:
         )
 
         st.download_button(
-            "📄 Exportar CSV",
+            "📥 Exportar CSV",
             csv,
             file_name=f"cnpq_{datetime.now().strftime('%Y%m%d')}.csv",
             mime='text/csv'
