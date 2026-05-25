@@ -1,5 +1,5 @@
 # appy3.py
-# CNPq Analytics Dashboard - Versão Otimizada e Corrigida
+# CNPq Analytics Dashboard - Versão Corrigida v1.1
 # Desenvolvido por: Raphael Pires
 
 import streamlit as st
@@ -28,7 +28,9 @@ CONFIG = {
     "CLUSTER_DEFAULT": 3,
     "PERCENTIL_OUTLIER": 0.99,
     "MAX_ROWS_TABLE": 100,
-    "CACHE_TTL": 3600
+    "CACHE_TTL": 3600,
+    "MIN_ANO_STEP": 1,
+    "MIN_DATA_CORRELACAO": 2
 }
 
 # ============================================================
@@ -204,28 +206,41 @@ section[data-testid="stSidebar"] {{
     .hero h1 {{ font-size: 2rem; }}
     .block-container {{ padding: 1rem !important; }}
 }}
+
+/* Feedback visual para downloads */
+.download-success {{
+    background: rgba(16,185,129,0.2);
+    border: 1px solid {COR_VERDE};
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    color: {COR_VERDE};
+    font-size: 0.8rem;
+}}
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# FUNÇÕES AUXILIARES - FORMATAÇÃO
+# FUNÇÕES AUXILIARES - FORMATAÇÃO [CORREÇÃO #2]
 # ============================================================
 def fmt_brl(valor):
-    """Formata valor monetário para padrão brasileiro"""
-    if pd.isna(valor) or valor == 0:
+    """Formata valor monetário para padrão brasileiro - COM tratamento de negativos"""
+    if pd.isna(valor):
         return "R$ 0,00"
     try:
         valor_float = float(valor)
-        if valor_float < 0:
-            return f"- {fmt_brl(abs(valor_float))}"
-        if valor_float >= 1_000_000_000:
-            return f"R$ {valor_float/1_000_000_000:.2f}B".replace(".", ",")
-        if valor_float >= 1_000_000:
-            return f"R$ {valor_float/1_000_000:.2f}M".replace(".", ",")
-        if valor_float >= 1_000:
-            return f"R$ {valor_float/1_000:.2f}K".replace(".", ",")
-        return f"R$ {valor_float:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    except:
+        # [CORREÇÃO #2] Tratamento para valores negativos
+        sinal = "-" if valor_float < 0 else ""
+        valor_abs = abs(valor_float)
+        
+        if valor_abs >= 1_000_000_000:
+            return f"{sinal}R$ {valor_abs/1_000_000_000:.2f}B".replace(".", ",")
+        if valor_abs >= 1_000_000:
+            return f"{sinal}R$ {valor_abs/1_000_000:.2f}M".replace(".", ",")
+        if valor_abs >= 1_000:
+            return f"{sinal}R$ {valor_abs/1_000:.2f}K".replace(".", ",")
+        return f"{sinal}R$ {valor_abs:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except (ValueError, TypeError):
         return "R$ 0,00"
 
 def fmt_num(valor):
@@ -234,21 +249,21 @@ def fmt_num(valor):
         return "0"
     try:
         return f"{int(valor):,}".replace(",", ".")
-    except:
+    except (ValueError, TypeError):
         return str(valor)
 
 def parse_moeda_br(valor_str):
-    """Converte string monetária BR para float - CORRIGIDO"""
-    if pd.isna(valor_str) or str(valor_str).strip() == '':
+    """Converte string monetária BR para float - [CORREÇÃO #3]"""
+    if pd.isna(valor_str):
         return np.nan
     try:
-        limpo = re.sub(r'[R$\s]', '', str(valor_str))
-        limpo = limpo.replace('.', '').replace(',', '.').strip()
-        if limpo and limpo != '.':
-            resultado = float(limpo)
-            return resultado if resultado != 0 else np.nan
-        return np.nan
-    except ValueError:
+        # Remove R$, espaços, pontos de milhar e substitui vírgula decimal por ponto
+        limpo = re.sub(r'[R$\s]', '', str(valor_str)).replace('.', '').replace(',', '.').strip()
+        # [CORREÇÃO #3] Retorna np.nan para string vazia, não string vazia
+        if not limpo:
+            return np.nan
+        return float(limpo)
+    except (ValueError, TypeError, AttributeError):
         return np.nan
 
 # ============================================================
@@ -258,7 +273,7 @@ def parse_moeda_br(valor_str):
 def calcular_hhi(df, coluna):
     """Calcula Índice Herfindahl-Hirschman (concentração de mercado)"""
     total = df[coluna].sum()
-    if total == 0 or total is None:
+    if total == 0 or total is None or pd.isna(total):
         return 0
     participacoes = (df[coluna] / total) ** 2
     return participacoes.sum() * 10000
@@ -271,7 +286,7 @@ def calcular_cagr(serie):
     primeiro = serie.iloc[0]
     ultimo = serie.iloc[-1]
     n = len(serie) - 1
-    if primeiro is None or primeiro <= 0 or ultimo is None:
+    if pd.isna(primeiro) or pd.isna(ultimo) or primeiro <= 0:
         return 0
     return (pow(ultimo/primeiro, 1/n) - 1) * 100
 
@@ -280,7 +295,7 @@ def calcular_pareto(df, coluna):
     """Calcula curva de Pareto (80/20)"""
     df_sorted = df.sort_values(coluna, ascending=False).reset_index(drop=True)
     total = df_sorted[coluna].sum()
-    if total == 0:
+    if pd.isna(total) or total == 0:
         df_sorted['percentual_acumulado'] = 0
     else:
         df_sorted['percentual_acumulado'] = (df_sorted[coluna].cumsum() / total) * 100
@@ -288,12 +303,13 @@ def calcular_pareto(df, coluna):
 
 @st.cache_data(ttl=CONFIG["CACHE_TTL"])
 def calcular_clusterizacao(df, coluna_grupo, colunas_features, n_clusters=None):
-    """Realiza clusterização K-Means com cache - CORRIGIDO"""
+    """Realiza clusterização K-Means com cache - [CORREÇÃO #1]"""
     if n_clusters is None:
         n_clusters = CONFIG["CLUSTER_DEFAULT"]
     
-    # Agrupa dados corretamente
-    cluster_data = df.groupby(coluna_grupo)[colunas_features].sum().reset_index()
+    # [CORREÇÃO #1] Agrupa apenas as features, excluindo a coluna de grupo do agg
+    agg_dict = {col: 'sum' for col in colunas_features if col != coluna_grupo}
+    cluster_data = df.groupby(coluna_grupo).agg(agg_dict).reset_index()
     cluster_data = cluster_data.dropna(subset=colunas_features)
     
     if len(cluster_data) < n_clusters:
@@ -307,7 +323,7 @@ def calcular_clusterizacao(df, coluna_grupo, colunas_features, n_clusters=None):
         return cluster_data, None
     except Exception as e:
         logger.error(f"Erro na clusterização: {e}")
-        return None, str(e)
+        return None, f"Erro técnico: {str(e)}"
 
 # ============================================================
 # CARREGAMENTO E VALIDAÇÃO DE DADOS
@@ -366,10 +382,10 @@ def carregar_dados(uploaded_file):
     return None, None
 
 # ============================================================
-# FUNÇÃO PARA DOWNLOAD DE GRÁFICOS - CORRIGIDA
+# DOWNLOAD DE GRÁFICOS [CORREÇÃO #4]
 # ============================================================
 def download_graph_button(fig, filename, label="📥 Baixar gráfico"):
-    """Cria botão de download para gráfico Plotly com feedback"""
+    """Cria botão de download para gráfico Plotly com feedback [CORREÇÃO #4]"""
     try:
         img_bytes = fig.to_image(format="png", width=1200, height=600, scale=2)
         return st.download_button(
@@ -379,9 +395,13 @@ def download_graph_button(fig, filename, label="📥 Baixar gráfico"):
             mime="image/png",
             key=f"dl_{filename}"
         )
+    except ImportError:
+        st.warning("⚠️ Para baixar gráficos, instale: `pip install kaleido`")
+        return None
     except Exception as e:
-        logger.warning(f"Erro ao gerar PNG: {e}")
-        st.warning("⚠️ Download não disponível para este gráfico")
+        logger.warning(f"Erro ao gerar download do gráfico {filename}: {e}")
+        # [CORREÇÃO #4] Feedback visual ao usuário em vez de falha silenciosa
+        st.caption(f"⚠️ Download indisponível: {type(e).__name__}")
         return None
 
 # ============================================================
@@ -461,7 +481,7 @@ def render_hero():
     """, unsafe_allow_html=True)
 
 # ============================================================
-# SIDEBAR - CONTROLES E FILTROS
+# SIDEBAR - CONTROLES E FILTROS [CORREÇÃO #5]
 # ============================================================
 def render_sidebar():
     with st.sidebar:
@@ -489,42 +509,56 @@ def render_sidebar():
         st.markdown("### 🧬 Filtros")
         df_filtrado = df.copy()
         
+        # [CORREÇÃO #5] Filtro por ano com validação de step e intervalo
         if "ano" in df.columns:
-            anos = sorted(df["ano"].dropna().unique().astype(int))
-            if len(anos) > 1:
-                ano_sel = st.slider("Ano", min(anos), max(anos), (min(anos), max(anos)), step=1)
-                df_filtrado = df_filtrado[(df_filtrado["ano"] >= ano_sel[0]) & (df_filtrado["ano"] <= ano_sel[1])]
+            anos_validos = df["ano"].dropna()
+            if len(anos_validos) > 0:
+                anos = sorted(anos_validos.unique().astype(int))
+                if len(anos) > 1:
+                    min_ano, max_ano = min(anos), max(anos)
+                    # Valida step: usa 1 para intervalos pequenos, calcula dinamicamente para grandes
+                    step = CONFIG["MIN_ANO_STEP"] if (max_ano - min_ano) <= 10 else max(1, (max_ano - min_ano) // 10)
+                    ano_sel = st.slider("Ano", min_ano, max_ano, (min_ano, max_ano), step=step)
+                    df_filtrado = df_filtrado[(df_filtrado["ano"] >= ano_sel[0]) & (df_filtrado["ano"] <= ano_sel[1])]
         
+        # Filtro por área do conhecimento
         if "grande_area" in df.columns:
             areas = sorted(df["grande_area"].dropna().unique())
-            areas_sel = st.multiselect("Grande Área", areas, default=areas[:6] if len(areas)>6 else areas)
-            if areas_sel:
-                df_filtrado = df_filtrado[df_filtrado["grande_area"].isin(areas_sel)]
+            if areas:
+                areas_sel = st.multiselect("Grande Área", areas, default=areas[:6] if len(areas)>6 else areas)
+                if areas_sel:
+                    df_filtrado = df_filtrado[df_filtrado["grande_area"].isin(areas_sel)]
         
+        # Filtro por região
         if "regiao_nome" in df.columns:
             regioes = sorted(df["regiao_nome"].dropna().unique())
-            reg_sel = st.multiselect("Região", regioes, default=regioes)
-            if reg_sel:
-                df_filtrado = df_filtrado[df_filtrado["regiao_nome"].isin(reg_sel)]
+            if regioes:
+                reg_sel = st.multiselect("Região", regioes, default=regioes)
+                if reg_sel:
+                    df_filtrado = df_filtrado[df_filtrado["regiao_nome"].isin(reg_sel)]
         
         return df_filtrado, df
 
 # ============================================================
-# KPIs PRINCIPAIS (com validação de dados vazios)
+# KPIs PRINCIPAIS [CORREÇÃO #6]
 # ============================================================
 def render_kpis(df_filtrado):
-    if df_filtrado.empty:
-        st.warning("⚠️ Nenhum dado disponível para exibir KPIs")
+    # [CORREÇÃO #6] Verificação para DataFrame vazio antes de calcular métricas
+    if df_filtrado is None or df_filtrado.empty or "valor_pago" not in df_filtrado.columns:
+        st.warning("⚠️ Nenhum dado disponível para calcular métricas. Verifique os filtros aplicados.")
         return 0, 0, 0, 0, 0
     
     total_volume = df_filtrado["valor_pago"].sum()
     total_bolsas = df_filtrado.shape[0]
+    
+    # Evita divisão por zero
     ticket_medio = total_volume / total_bolsas if total_bolsas > 0 else 0
     n_pesq = df_filtrado["beneficiario"].nunique() if "beneficiario" in df_filtrado.columns else 0
     n_inst = df_filtrado["instituicao_destino"].nunique() if "instituicao_destino" in df_filtrado.columns else 0
 
     col1, col2, col3, col4 = st.columns(4)
 
+    # CAGR para delta
     if "ano" in df_filtrado.columns:
         evol_ano = df_filtrado.groupby("ano")["valor_pago"].sum()
         cagr = calcular_cagr(evol_ano)
@@ -546,7 +580,8 @@ def render_kpis(df_filtrado):
     with col4:
         st.metric("🏛️ INSTITUIÇÕES", fmt_num(n_inst))
 
-    st.caption(f"📊 Ticket médio: {fmt_brl(ticket_medio)} | Média por pesquisador: {fmt_brl(total_volume/n_pesq) if n_pesq>0 else 'N/A'}")
+    if total_bolsas > 0:
+        st.caption(f"📊 Ticket médio: {fmt_brl(ticket_medio)} | Média por pesquisador: {fmt_brl(total_volume/n_pesq) if n_pesq>0 else 'N/A'}")
     
     return total_volume, total_bolsas, ticket_medio, n_pesq, n_inst
 
@@ -554,31 +589,32 @@ def render_kpis(df_filtrado):
 # RESUMO EXECUTIVO COM INSIGHTS
 # ============================================================
 def render_resumo(df_filtrado, total_volume):
-    if df_filtrado.empty:
-        st.info("ℹ️ Carregue um arquivo CSV para visualizar os insights")
-        return
-    
     st.markdown("## 🔍 Resumo Executivo")
+    
+    # Verifica se há dados para análise
+    if df_filtrado is None or df_filtrado.empty:
+        st.info("ℹ️ Aplique filtros ou carregue dados para gerar insights.")
+        return
 
     insights = []
 
     if "regiao_nome" in df_filtrado.columns and not df_filtrado["regiao_nome"].isna().all():
         reg_share = df_filtrado.groupby("regiao_nome")["valor_pago"].sum()
-        if not reg_share.empty:
+        if not reg_share.empty and total_volume > 0:
             top_reg = reg_share.idxmax()
-            pct_reg = (reg_share.max() / total_volume) * 100 if total_volume > 0 else 0
+            pct_reg = (reg_share.max() / total_volume) * 100
             insights.append(f"📍 A região **{top_reg}** concentra **{pct_reg:.1f}%** do investimento total.")
 
     if "grande_area" in df_filtrado.columns and not df_filtrado["grande_area"].isna().all():
         area_share = df_filtrado.groupby("grande_area")["valor_pago"].sum()
-        if not area_share.empty:
+        if not area_share.empty and total_volume > 0:
             top_area = area_share.idxmax()
-            pct_area = (area_share.max() / total_volume) * 100 if total_volume > 0 else 0
+            pct_area = (area_share.max() / total_volume) * 100
             insights.append(f"🧬 A área **{top_area}** lidera com **{pct_area:.1f}%** dos recursos.")
 
     if "ano" in df_filtrado.columns:
         evol_ano = df_filtrado.groupby("ano")["valor_pago"].sum()
-        if len(evol_ano) >= 2 and evol_ano.iloc[-2] > 0:
+        if len(evol_ano) >= 2 and evol_ano.iloc[-2] > 0 and not pd.isna(evol_ano.iloc[-2]):
             crescimento = (evol_ano.iloc[-1] / evol_ano.iloc[-2] - 1) * 100
             if crescimento > 10:
                 insights.append(f"📈 Crescimento acelerado de **+{crescimento:.1f}%** no último ano.")
@@ -605,10 +641,6 @@ def render_resumo(df_filtrado, total_volume):
 def render_tab_evolucao(df_filtrado):
     st.markdown("### 📈 Evolução Temporal")
     
-    if df_filtrado.empty:
-        st.info("ℹ️ Nenhum dado disponível para análise temporal.")
-        return
-    
     if "ano" not in df_filtrado.columns or df_filtrado["ano"].isna().all():
         st.info("ℹ️ Coluna 'ano' não disponível para análise temporal.")
         return
@@ -625,6 +657,7 @@ def render_tab_evolucao(df_filtrado):
     st.plotly_chart(fig_evol, use_container_width=True)
     download_graph_button(fig_evol, "evolucao_investimento", "📥 Baixar gráfico (PNG)")
     
+    # Projeção linear
     if len(evol_data) >= 3:
         with st.expander("🔮 Projeção para próximos 2 anos", expanded=False):
             X = np.array(evol_data["ano"]).reshape(-1, 1)
@@ -663,10 +696,6 @@ def render_tab_evolucao(df_filtrado):
 def render_tab_regional(df_filtrado):
     st.markdown("### 🗺️ Distribuição Regional")
     
-    if df_filtrado.empty:
-        st.info("ℹ️ Nenhum dado disponível para análise regional.")
-        return
-    
     if "regiao_nome" not in df_filtrado.columns or df_filtrado["regiao_nome"].isna().all():
         st.info("ℹ️ Dados regionais não disponíveis.")
         return
@@ -698,6 +727,7 @@ def render_tab_regional(df_filtrado):
         fig_pie.update_traces(textposition="inside", textinfo="percent+label")
         st.plotly_chart(fig_pie, use_container_width=True)
     
+    # Ticket médio por região
     ticket_reg = df_filtrado.groupby("regiao_nome")["valor_pago"].mean().reset_index()
     ticket_reg.columns = ["Região", "Ticket Médio"]
     fig_ticket = px.bar(
@@ -713,10 +743,6 @@ def render_tab_regional(df_filtrado):
 # ============================================================
 def render_tab_areas(df_filtrado):
     st.markdown("### 🧬 Áreas do Conhecimento")
-    
-    if df_filtrado.empty:
-        st.info("ℹ️ Nenhum dado disponível para análise de áreas.")
-        return
     
     if "grande_area" not in df_filtrado.columns or df_filtrado["grande_area"].isna().all():
         st.info("ℹ️ Dados de área do conhecimento não disponíveis.")
@@ -748,6 +774,7 @@ def render_tab_areas(df_filtrado):
         fig_treemap.update_layout(template="plotly_dark", height=500)
         st.plotly_chart(fig_treemap, use_container_width=True)
     
+    # Análise de Pareto
     with st.expander("📊 Análise de Pareto (80/20)", expanded=True):
         pareto_data = calcular_pareto(area_data.copy(), "Valor")
         fig_pareto = make_subplots(specs=[[{"secondary_y": True}]])
@@ -778,12 +805,9 @@ def render_tab_areas(df_filtrado):
 def render_tab_rankings(df_filtrado):
     st.markdown("### 🏆 Rankings")
     
-    if df_filtrado.empty:
-        st.info("ℹ️ Nenhum dado disponível para rankings.")
-        return
-    
     col_r1, col_r2 = st.columns(2)
     
+    # Top Pesquisadores
     with col_r1:
         st.markdown("#### 👤 Top 10 Pesquisadores")
         if "beneficiario" in df_filtrado.columns:
@@ -797,6 +821,7 @@ def render_tab_rankings(df_filtrado):
             display_df.columns = ["Pesquisador", "Total Recebido", "Participação"]
             st.dataframe(display_df, use_container_width=True, hide_index=True)
             
+            # Busca de pesquisador
             with st.expander("🔍 Buscar pesquisador específico"):
                 busca = st.text_input("Digite parte do nome", key="busca_pesq")
                 if busca:
@@ -812,6 +837,7 @@ def render_tab_rankings(df_filtrado):
         else:
             st.info("ℹ️ Dados de beneficiário não disponíveis")
     
+    # Top Instituições
     with col_r2:
         st.markdown("#### 🏛️ Top 10 Instituições")
         if "instituicao_destino" in df_filtrado.columns:
@@ -825,6 +851,7 @@ def render_tab_rankings(df_filtrado):
         else:
             st.info("ℹ️ Dados de instituição não disponíveis")
     
+    # Modalidades
     st.markdown("#### 🎓 Modalidades Mais Frequentes")
     if "modalidade" in df_filtrado.columns:
         top_mod = df_filtrado["modalidade"].value_counts().head(10).reset_index()
@@ -839,52 +866,59 @@ def render_tab_rankings(df_filtrado):
         st.info("ℹ️ Dados de modalidade não disponíveis")
 
 # ============================================================
-# TAB 5: ESTATÍSTICAS
+# TAB 5: ESTATÍSTICAS [CORREÇÃO #7]
 # ============================================================
 def render_tab_estatisticas(df_filtrado):
     st.markdown("### 📊 Estatísticas Descritivas")
-    
-    if df_filtrado.empty:
-        st.info("ℹ️ Nenhum dado disponível para estatísticas.")
-        return
     
     col_s1, col_s2 = st.columns(2)
     
     with col_s1:
         st.markdown("#### 📦 Distribuição dos Valores")
-        fig_box = px.box(
-            df_filtrado, y="valor_pago", title="Boxplot: Distribuição e Outliers",
-            labels={"valor_pago": "Valor Pago (R$)"}
-        )
-        fig_box.update_layout(template="plotly_dark", height=450)
-        st.plotly_chart(fig_box, use_container_width=True)
+        if not df_filtrado["valor_pago"].isna().all():
+            fig_box = px.box(
+                df_filtrado, y="valor_pago", title="Boxplot: Distribuição e Outliers",
+                labels={"valor_pago": "Valor Pago (R$)"}
+            )
+            fig_box.update_layout(template="plotly_dark", height=450)
+            st.plotly_chart(fig_box, use_container_width=True)
+        else:
+            st.info("ℹ️ Sem dados válidos para boxplot")
         
         st.markdown("#### 📋 Métricas Principais")
-        stats = {
-            "Média": fmt_brl(df_filtrado["valor_pago"].mean()),
-            "Mediana": fmt_brl(df_filtrado["valor_pago"].median()),
-            "Desvio Padrão": fmt_brl(df_filtrado["valor_pago"].std()),
-            "Mínimo": fmt_brl(df_filtrado["valor_pago"].min()),
-            "Máximo": fmt_brl(df_filtrado["valor_pago"].max()),
-            "Q1 (25%)": fmt_brl(df_filtrado["valor_pago"].quantile(0.25)),
-            "Q3 (75%)": fmt_brl(df_filtrado["valor_pago"].quantile(0.75)),
-        }
-        st.json(stats)
+        if not df_filtrado["valor_pago"].isna().all():
+            stats = {
+                "Média": fmt_brl(df_filtrado["valor_pago"].mean()),
+                "Mediana": fmt_brl(df_filtrado["valor_pago"].median()),
+                "Desvio Padrão": fmt_brl(df_filtrado["valor_pago"].std()),
+                "Mínimo": fmt_brl(df_filtrado["valor_pago"].min()),
+                "Máximo": fmt_brl(df_filtrado["valor_pago"].max()),
+                "Q1 (25%)": fmt_brl(df_filtrado["valor_pago"].quantile(0.25)),
+                "Q3 (75%)": fmt_brl(df_filtrado["valor_pago"].quantile(0.75)),
+            }
+            st.json(stats)
+        else:
+            st.info("ℹ️ Sem dados numéricos para estatísticas")
     
     with col_s2:
         st.markdown("#### 📈 Histograma com Densidade")
-        fig_hist = px.histogram(
-            df_filtrado, x="valor_pago", nbins=50, marginal="violin",
-            title="Distribuição de Frequência dos Valores",
-            labels={"valor_pago": "Valor Pago (R$)"}
-        )
-        fig_hist.update_layout(template="plotly_dark", height=450)
-        st.plotly_chart(fig_hist, use_container_width=True)
+        if not df_filtrado["valor_pago"].isna().all():
+            fig_hist = px.histogram(
+                df_filtrado, x="valor_pago", nbins=50, marginal="violin",
+                title="Distribuição de Frequência dos Valores",
+                labels={"valor_pago": "Valor Pago (R$)"}
+            )
+            fig_hist.update_layout(template="plotly_dark", height=450)
+            st.plotly_chart(fig_hist, use_container_width=True)
+        else:
+            st.info("ℹ️ Sem dados válidos para histograma")
         
+        # [CORREÇÃO #7] Correlação com validação robusta de dados insuficientes
         if "ano" in df_filtrado.columns:
             with st.expander("🔗 Correlação Ano × Investimento"):
                 corr_data = df_filtrado[["ano", "valor_pago"]].dropna()
-                if len(corr_data) > 1:
+                # Validação: precisa de mínimo de dados e variação nos valores
+                if len(corr_data) >= CONFIG["MIN_DATA_CORRELACAO"] and corr_data["valor_pago"].std() > 0:
                     corr_matrix = corr_data.corr()
                     fig_corr = px.imshow(
                         corr_matrix, text_auto=".2f", aspect="auto", 
@@ -892,8 +926,17 @@ def render_tab_estatisticas(df_filtrado):
                     )
                     fig_corr.update_layout(template="plotly_dark", height=350)
                     st.plotly_chart(fig_corr, use_container_width=True)
+                    
+                    # Interpretação da correlação
+                    corr_val = corr_matrix.loc["ano", "valor_pago"]
+                    if abs(corr_val) >= 0.7:
+                        st.success(f"✅ Correlação **forte**: {corr_val:+.2f}")
+                    elif abs(corr_val) >= 0.4:
+                        st.info(f"🟡 Correlação **moderada**: {corr_val:+.2f}")
+                    else:
+                        st.caption(f"🔵 Correlação **fraca**: {corr_val:+.2f}")
                 else:
-                    st.info("Dados insuficientes para calcular correlação")
+                    st.info(f"ℹ️ Dados insuficientes para correlação (mínimo {CONFIG['MIN_DATA_CORRELACAO']} pares com variação)")
 
 # ============================================================
 # TAB 6: ANÁLISES AVANÇADAS
@@ -901,10 +944,7 @@ def render_tab_estatisticas(df_filtrado):
 def render_tab_avancadas(df_filtrado):
     st.markdown("### 🤖 Análises Avançadas")
     
-    if df_filtrado.empty:
-        st.info("ℹ️ Nenhum dado disponível para análises avançadas.")
-        return
-    
+    # Clusterização
     with st.expander("🧠 Clusterização de Instituições (K-Means)", expanded=True):
         if "instituicao_destino" in df_filtrado.columns and "valor_pago" in df_filtrado.columns:
             n_clusters = st.slider("Número de clusters", 2, 6, CONFIG["CLUSTER_DEFAULT"], key="n_clusters")
@@ -928,6 +968,7 @@ def render_tab_avancadas(df_filtrado):
                 fig_cluster.update_layout(template="plotly_dark", height=500, yaxis=dict(visible=False))
                 st.plotly_chart(fig_cluster, use_container_width=True)
                 
+                # Resumo dos clusters
                 st.markdown("##### 📊 Resumo por Cluster")
                 cluster_summary = cluster_result.groupby("cluster")["valor_pago"].agg(["count", "sum", "mean"]).reset_index()
                 cluster_summary.columns = ["Cluster", "Qtd Instituições", "Investimento Total", "Média por Instituição"]
@@ -939,25 +980,29 @@ def render_tab_avancadas(df_filtrado):
         else:
             st.info("ℹ️ Dados insuficientes para clusterização")
     
+    # Detecção de Outliers
     with st.expander("⚠️ Detecção de Outliers", expanded=False):
-        p99 = df_filtrado["valor_pago"].quantile(CONFIG["PERCENTIL_OUTLIER"])
-        outliers = df_filtrado[df_filtrado["valor_pago"] > p99]
-        
-        st.metric(
-            "Registros acima do percentil 99", 
-            f"{len(outliers)}", 
-            delta=f"Limite: {fmt_brl(p99)}",
-            help=f"Valores acima de {CONFIG['PERCENTIL_OUTLIER']*100}% da distribuição"
-        )
-        
-        if not outliers.empty:
-            with st.expander(f"Ver {len(outliers)} outliers"):
-                cols_display = [c for c in ["beneficiario", "valor_pago", "instituicao_destino", "grande_area"] if c in outliers.columns]
-                outliers_display = outliers[cols_display].copy()
-                if "valor_pago" in outliers_display.columns:
-                    outliers_display["valor_pago_fmt"] = outliers_display["valor_pago"].apply(fmt_brl)
-                st.dataframe(outliers_display.head(CONFIG["MAX_ROWS_TABLE"]), use_container_width=True)
-                st.caption(f"Exibindo até {CONFIG['MAX_ROWS_TABLE']} registros")
+        if not df_filtrado["valor_pago"].isna().all():
+            p99 = df_filtrado["valor_pago"].quantile(CONFIG["PERCENTIL_OUTLIER"])
+            outliers = df_filtrado[df_filtrado["valor_pago"] > p99]
+            
+            st.metric(
+                "Registros acima do percentil 99", 
+                f"{len(outliers)}", 
+                delta=f"Limite: {fmt_brl(p99)}",
+                help=f"Valores acima de {CONFIG['PERCENTIL_OUTLIER']*100}% da distribuição"
+            )
+            
+            if not outliers.empty:
+                with st.expander(f"Ver {len(outliers)} outliers"):
+                    cols_display = [c for c in ["beneficiario", "valor_pago", "instituicao_destino", "grande_area"] if c in outliers.columns]
+                    outliers_display = outliers[cols_display].copy()
+                    if "valor_pago" in outliers_display.columns:
+                        outliers_display["valor_pago_fmt"] = outliers_display["valor_pago"].apply(fmt_brl)
+                    st.dataframe(outliers_display.head(CONFIG["MAX_ROWS_TABLE"]), use_container_width=True)
+                    st.caption(f"Exibindo até {CONFIG['MAX_ROWS_TABLE']} registros")
+        else:
+            st.info("ℹ️ Sem dados válidos para detecção de outliers")
 
 # ============================================================
 # EXPORTAÇÃO E RODAPÉ
@@ -969,7 +1014,7 @@ def render_export_footer(df_filtrado):
     col_exp1, col_exp2 = st.columns(2)
     
     with col_exp1:
-        if not df_filtrado.empty:
+        if df_filtrado is not None and not df_filtrado.empty:
             csv_buffer = io.StringIO()
             df_filtrado.to_csv(csv_buffer, index=False, sep=";", encoding="utf-8-sig")
             csv_bytes = csv_buffer.getvalue().encode("utf-8")
@@ -982,17 +1027,18 @@ def render_export_footer(df_filtrado):
                 key="btn_csv_filtrado"
             )
         else:
-            st.button("📄 Baixar CSV", disabled=True, help="Carregue dados primeiro")
+            st.caption("ℹ️ Carregue dados para exportar")
     
     with col_exp2:
         st.markdown(f'<a href="{LINK_CSV}" target="_blank" style="text-decoration: none;"><div class="download-btn" style="text-align: center;">📥 Baixar CSV original (Google Drive)</div></a>', unsafe_allow_html=True)
     
+    # Rodapé
     st.markdown("---")
     st.markdown(f"""
     <div class="footer">
         🔬 CNPq Analytics · Fonte: Portal Brasileiro de Dados Abertos (CGU/CNPq)<br>
         Dashboard desenvolvido para portfólio de Análise de Dados – Raphael Pires<br>
-        <span style="color: {COR_TEXTO_MUTED};">Versão: appy3.py · Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M')}</span>
+        <span style="color: {COR_TEXTO_MUTED};">Versão: appy3.py v1.1 · {datetime.now().strftime('%d/%m/%Y %H:%M')}</span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1000,26 +1046,32 @@ def render_export_footer(df_filtrado):
 # FUNÇÃO PRINCIPAL
 # ============================================================
 def main():
-    logger.info("Iniciando aplicação CNPq Analytics")
+    logger.info("Iniciando aplicação CNPq Analytics v1.1")
     
+    # Renderiza hero section
     render_hero()
     
+    # Renderiza sidebar e carrega dados
     df_filtrado, df_original = render_sidebar()
     
     if df_filtrado is None:
         st.markdown("<br>" * 3, unsafe_allow_html=True)
-        render_export_footer(pd.DataFrame())
+        render_export_footer(None)
         return
     
-    # Validação adicional para dados vazios após filtros
+    # [CORREÇÃO #6] Verifica se há dados após filtros
     if df_filtrado.empty:
-        st.warning("⚠️ Nenhum dado encontrado com os filtros selecionados. Ajuste os filtros.")
-        render_export_footer(pd.DataFrame())
+        st.warning("⚠️ Nenhum registro encontrado com os filtros atuais. Ajuste os filtros ou recarregue os dados.")
+        render_export_footer(df_filtrado)
         return
     
+    # KPIs principais
     render_kpis(df_filtrado)
+    
+    # Resumo executivo
     render_resumo(df_filtrado, df_filtrado["valor_pago"].sum())
     
+    # Tabs de análise
     st.markdown("## 📊 Análises Interativas")
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📈 Evolução", "🗺️ Regional", "🧬 Áreas",
@@ -1044,6 +1096,7 @@ def main():
     with tab6:
         render_tab_avancadas(df_filtrado)
     
+    # Sobre o analista
     st.markdown("---")
     st.markdown("""
     <div style="background: rgba(18,25,45,0.5); border-radius: 1rem; padding: 1.2rem; margin: 1rem 0;">
@@ -1065,6 +1118,7 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
+    # Exportação e rodapé
     render_export_footer(df_filtrado)
     
     logger.info("Aplicação renderizada com sucesso")
