@@ -3,9 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from sklearn.linear_model import LinearRegression
-import re
 import warnings
 from datetime import datetime
 
@@ -22,133 +20,194 @@ st.set_page_config(
 )
 
 # ============================================================
-# TEMA ESCURO PREMIUM (Navy com glow)
+# CORES PREMIUM
 # ============================================================
 COR_FUNDO = "#0A0F1C"
-COR_CARD = "rgba(18, 25, 45, 0.75)"
-COR_BORDA = "rgba(56, 189, 248, 0.2)"
+COR_CARD = "rgba(18, 25, 45, 0.85)"
+COR_BORDA = "rgba(56, 189, 248, 0.3)"
+COR_GLOW = "rgba(56, 189, 248, 0.5)"
 COR_TEXTO = "#F1F5F9"
 COR_TEXTO_MUTED = "#94A3B8"
-COR_GLOW = "rgba(56, 189, 248, 0.4)"
-COR_VERDE = "#10B981"
-COR_VERMELHO = "#EF4444"
 COR_AZUL = "#3B82F6"
+COR_VERDE = "#10B981"
 
 # ============================================================
-# CSS PREMIUM (Glassmorphism + Glow + Gradients)
+# CSS PREMIUM
 # ============================================================
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-html, body, .stApp {{
-    background: radial-gradient(circle at 10% 20%, #0A0F1C, #030712);
-    color: {COR_TEXTO};
+* {{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}}
+
+.stApp {{
+    background: radial-gradient(circle at 20% 30%, #0A0F1C, #030712);
     font-family: 'Inter', sans-serif;
 }}
 
 .block-container {{
-    padding: 1.5rem 2rem;
-    backdrop-filter: blur(2px);
+    padding: 1.5rem 2rem !important;
 }}
 
-/* Hero Section */
+/* Hero Section com Glow */
 .hero {{
-    background: linear-gradient(135deg, rgba(56,189,248,0.15) 0%, rgba(16,185,129,0.05) 100%);
-    border-radius: 32px;
-    padding: 2rem 2rem;
+    background: linear-gradient(135deg, rgba(56,189,248,0.1) 0%, rgba(16,185,129,0.05) 100%);
+    border-radius: 2rem;
+    padding: 2.5rem 2rem;
     margin-bottom: 2rem;
-    border: 1px solid rgba(56,189,248,0.2);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 0 40px rgba(56,189,248,0.1);
+    border: 1px solid {COR_BORDA};
+    box-shadow: 0 0 40px {COR_GLOW};
+    position: relative;
+    overflow: hidden;
+}}
+
+.hero::before {{
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 60%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(56,189,248,0.15) 0%, transparent 70%);
+    pointer-events: none;
 }}
 
 .hero h1 {{
-    font-size: 3rem;
+    font-size: 3.5rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #fff, #38BDF8);
+    background: linear-gradient(135deg, #FFFFFF, #38BDF8);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
     letter-spacing: -0.02em;
-    font-family: 'Space Grotesk', monospace;
+    margin-bottom: 0.5rem;
 }}
 
 .hero p {{
     font-size: 1.1rem;
     color: {COR_TEXTO_MUTED};
-    margin-top: 0.5rem;
+    margin-bottom: 1.5rem;
 }}
 
-/* KPI Enterprise */
-.kpi-card {{
-    background: rgba(18, 25, 45, 0.7);
-    backdrop-filter: blur(12px);
-    border-radius: 20px;
+.hero-badges {{
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}}
+
+.hero-badge {{
+    background: rgba(56,189,248,0.15);
+    border: 1px solid {COR_BORDA};
+    padding: 0.4rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: {COR_AZUL};
+}}
+
+/* Preview Cards */
+.preview-grid {{
+    display: flex;
+    gap: 1.2rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}}
+
+.preview-card {{
+    flex: 1;
+    min-width: 150px;
+    background: {COR_CARD};
+    backdrop-filter: blur(10px);
+    border: 1px solid {COR_BORDA};
+    border-radius: 1.2rem;
     padding: 1.2rem;
-    border: 1px solid rgba(56,189,248,0.2);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.3), 0 0 15px rgba(56,189,248,0.1);
+    text-align: center;
     transition: all 0.3s ease;
 }}
 
-.kpi-card:hover {{
-    transform: translateY(-4px);
-    border-color: rgba(56,189,248,0.6);
-    box-shadow: 0 12px 28px rgba(0,0,0,0.4), 0 0 25px rgba(56,189,248,0.2);
+.preview-card:hover {{
+    transform: translateY(-5px);
+    border-color: {COR_AZUL};
+    box-shadow: 0 0 25px {COR_GLOW};
 }}
 
-.kpi-title {{
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: {COR_TEXTO_MUTED};
-    font-weight: 600;
-}}
-
-.kpi-value {{
+.preview-number {{
     font-size: 2rem;
     font-weight: 800;
-    font-family: 'Space Grotesk', monospace;
-    margin: 0.3rem 0 0.2rem;
     color: white;
+    font-family: monospace;
 }}
 
-.kpi-delta {{
-    font-size: 0.75rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.2rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 30px;
-    background: rgba(0,0,0,0.3);
+.preview-label {{
+    font-size: 0.7rem;
+    color: {COR_TEXTO_MUTED};
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.3rem;
 }}
 
-.delta-up {{ color: {COR_VERDE}; }}
-.delta-down {{ color: {COR_VERMELHO}; }}
-
-/* Insight Cards */
-.insight-card {{
-    background: rgba(18, 25, 45, 0.6);
+/* Value Cards */
+.value-card {{
+    background: {COR_CARD};
     backdrop-filter: blur(10px);
-    border-left: 4px solid {COR_AZUL};
-    border-radius: 16px;
-    padding: 1rem 1.2rem;
-    margin-bottom: 0.8rem;
+    border: 1px solid {COR_BORDA};
+    border-radius: 1rem;
+    padding: 1rem;
+    text-align: center;
 }}
 
-/* Botão premium */
-.stDownloadButton button, .stButton button {{
+/* Upload Card */
+.upload-card {{
+    background: {COR_CARD};
+    backdrop-filter: blur(10px);
+    border: 2px dashed {COR_AZUL};
+    border-radius: 1.5rem;
+    padding: 2rem;
+    text-align: center;
+    margin: 1rem 0;
+    transition: all 0.3s ease;
+}}
+
+.upload-card:hover {{
+    border-color: {COR_VERDE};
+    box-shadow: 0 0 30px rgba(56,189,248,0.2);
+}}
+
+/* Botão estilizado */
+.stButton > button {{
     background: linear-gradient(135deg, #1E293B, #0F172A);
-    border: 1px solid rgba(56,189,248,0.3);
-    border-radius: 40px;
+    border: 1px solid {COR_AZUL};
+    border-radius: 2rem;
     color: white;
-    padding: 0.4rem 1.2rem;
+    padding: 0.5rem 1.2rem;
     font-weight: 500;
     transition: all 0.2s;
 }}
-.stDownloadButton button:hover, .stButton button:hover {{
-    border-color: {COR_AZUL};
+
+.stButton > button:hover {{
+    border-color: {COR_VERDE};
     box-shadow: 0 0 12px {COR_GLOW};
+}}
+
+/* Footer */
+.footer {{
+    text-align: center;
+    padding: 2rem 0 0.5rem;
+    margin-top: 2rem;
+    border-top: 1px solid {COR_BORDA};
+    color: {COR_TEXTO_MUTED};
+    font-size: 0.7rem;
+}}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {{
+    background: rgba(10, 15, 28, 0.95);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid {COR_BORDA};
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -195,17 +254,10 @@ def carregar_dados(uploaded_file):
             continue
     return None
 
-# ============================================================
-# FUNÇÃO PARA CRIAR MAPA DO BRASIL VAZIO (placeholder)
-# ============================================================
 def mapa_brasil_vazio():
-    # Dados de exemplo para preencher o mapa vazio – sem valores reais
-    uf_siglas = [
-        'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-        'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
-        'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
-    ]
-    # Cria um DataFrame com zeros – mapa sem cor
+    uf_siglas = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+                 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+                 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
     df_vazio = pd.DataFrame({'uf': uf_siglas, 'valor': [0]*len(uf_siglas)})
     fig = px.choropleth(
         df_vazio,
@@ -213,7 +265,7 @@ def mapa_brasil_vazio():
         locationmode='BRA-states',
         color='valor',
         color_continuous_scale='Blues',
-        title='📊 Distribuição do Investimento por UF (carregue o CSV para visualizar)'
+        title='📊 Distribuição do Investimento por UF'
     )
     fig.update_layout(
         geo=dict(bgcolor='rgba(0,0,0,0)', lakecolor='rgba(0,0,0,0)'),
@@ -221,88 +273,118 @@ def mapa_brasil_vazio():
         plot_bgcolor='rgba(0,0,0,0)',
         font=dict(color='white'),
         margin=dict(l=0, r=0, t=40, b=0),
-        height=500
-    )
-    return fig
-
-def mapa_brasil_real(df):
-    # Precisamos de dados por UF (unidade_federacao)
-    if 'unidade_federacao' in df.columns:
-        uf_data = df.groupby('unidade_federacao')['valor_pago'].sum().reset_index()
-        uf_data.columns = ['uf', 'valor']
-    else:
-        # Fallback: criar dummy
-        uf_data = pd.DataFrame({'uf': [], 'valor': []})
-    if uf_data.empty:
-        fig = mapa_brasil_vazio()
-        fig.update_layout(title='Dados insuficientes para gerar mapa')
-        return fig
-    fig = px.choropleth(
-        uf_data,
-        locations='uf',
-        locationmode='BRA-states',
-        color='valor',
-        color_continuous_scale='Blues',
-        title='🌡️ Intensidade do Investimento por Estado (cores mais escuras = maior volume)'
-    )
-    fig.update_layout(
-        geo=dict(bgcolor='rgba(0,0,0,0)', lakecolor='rgba(0,0,0,0)'),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white'),
-        margin=dict(l=0, r=0, t=50, b=0),
-        height=500
+        height=450
     )
     return fig
 
 # ============================================================
-# HERO SECTION (sempre presente)
+# PÁGINA INICIAL (SEM UPLOAD)
 # ============================================================
 st.markdown("""
 <div class="hero">
     <h1>🔬 CNPq Analytics</h1>
     <p>Inteligência estratégica para investimentos em pesquisa e desenvolvimento no Brasil</p>
-    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-        <span style="background: rgba(56,189,248,0.2); padding: 0.2rem 0.8rem; border-radius: 30px;">📊 Dados oficiais CNPq</span>
-        <span style="background: rgba(16,185,129,0.2); padding: 0.2rem 0.8rem; border-radius: 30px;">🏛️ 213.735 bolsas</span>
-        <span style="background: rgba(139,92,246,0.2); padding: 0.2rem 0.8rem; border-radius: 30px;">💰 R$ 1,02 bilhão</span>
+    <div class="hero-badges">
+        <span class="hero-badge">📊 Dados oficiais CNPq</span>
+        <span class="hero-badge">🏛️ 213.735 bolsas</span>
+        <span class="hero-badge">💰 R$ 1,02 bilhão</span>
+        <span class="hero-badge">🗺️ Mapeamento regional</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# SIDEBAR (controles + upload)
-# ============================================================
+# Prévia dos dados
+st.markdown("### 📈 Conheça o potencial da análise")
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.markdown("""
+    <div class="preview-card">
+        <div class="preview-number">213.735</div>
+        <div class="preview-label">Bolsas analisadas</div>
+    </div>
+    """, unsafe_allow_html=True)
+with col2:
+    st.markdown("""
+    <div class="preview-card">
+        <div class="preview-number">R$ 1,02B</div>
+        <div class="preview-label">Investimento total</div>
+    </div>
+    """, unsafe_allow_html=True)
+with col3:
+    st.markdown("""
+    <div class="preview-card">
+        <div class="preview-number">88.079</div>
+        <div class="preview-label">Pesquisadores</div>
+    </div>
+    """, unsafe_allow_html=True)
+with col4:
+    st.markdown("""
+    <div class="preview-card">
+        <div class="preview-number">4.281</div>
+        <div class="preview-label">Instituições</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Mapa vazio como preview
+st.markdown("### 🗺️ Visualize a distribuição geográfica")
+st.plotly_chart(mapa_brasil_vazio(), use_container_width=True)
+
+# Cards de valor agregado
+st.markdown("### 💡 O que você vai descobrir")
+col_v1, col_v2, col_v3 = st.columns(3)
+with col_v1:
+    st.markdown("""
+    <div class="value-card">
+        <span style="font-size: 2rem;">🎯</span>
+        <h4>Concentração regional</h4>
+        <p style="color: #94A3B8; font-size: 0.8rem;">Identifique quais regiões lideram os investimentos</p>
+    </div>
+    """, unsafe_allow_html=True)
+with col_v2:
+    st.markdown("""
+    <div class="value-card">
+        <span style="font-size: 2rem;">🧬</span>
+        <h4>Áreas do conhecimento</h4>
+        <p style="color: #94A3B8; font-size: 0.8rem;">Saúde, Engenharia, Humanas – onde o dinheiro está</p>
+    </div>
+    """, unsafe_allow_html=True)
+with col_v3:
+    st.markdown("""
+    <div class="value-card">
+        <span style="font-size: 2rem;">🏆</span>
+        <h4>Rankings de impacto</h4>
+        <p style="color: #94A3B8; font-size: 0.8rem;">Top pesquisadores e instituições mais financiadas</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Upload card
+st.markdown("""
+<div class="upload-card">
+    <span style="font-size: 3rem;">📂</span>
+    <h3>Carregue o arquivo CSV</h3>
+    <p style="color: #94A3B8;">Baixe o dataset oficial do CNPq e faça upload para iniciar a análise completa</p>
+    <p style="color: #3B82F6; font-size: 0.8rem; margin-top: 0.5rem;">⬅️ Use o menu lateral para enviar o arquivo</p>
+</div>
+""", unsafe_allow_html=True)
+
+# Sidebar com upload
 with st.sidebar:
     st.markdown("### 🎛️ Central Analítica")
-    col_t1, col_t2 = st.columns(2)
-    with col_t1:
-        if st.button("☀️ Claro", use_container_width=True):
-            st.session_state.tema = "claro"
-            st.rerun()
-    with col_t2:
-        if st.button("🌙 Escuro", use_container_width=True):
-            st.session_state.tema = "escuro"
-            st.rerun()
+    if st.button("☀️ Modo Claro", use_container_width=True):
+        st.session_state.tema = "claro"
+        st.rerun()
+    if st.button("🌙 Modo Escuro", use_container_width=True):
+        st.session_state.tema = "escuro"
+        st.rerun()
     st.markdown("---")
     uploaded_file = st.file_uploader("📂 Carregar CSV (bolsa_familia.csv)", type=["csv"])
-
     if uploaded_file is None:
-        st.info("👈 Envie o arquivo para iniciar a análise avançada.")
-        # Mostra preview do mapa vazio e cards de prévia
-        st.markdown("### 📊 Prévia dos dados")
-        col_pre1, col_pre2, col_pre3, col_pre4 = st.columns(4)
-        with col_pre1:
-            st.metric("Registros", "213.735")
-        with col_pre2:
-            st.metric("Investimento", "R$ 1,02B")
-        with col_pre3:
-            st.metric("Pesquisadores", "88.079")
-        with col_pre4:
-            st.metric("Instituições", "4.281")
-        st.stop()  # Interrompe aqui – não carrega dados
+        st.info("👈 Envie o arquivo para iniciar a análise avançada")
+        st.stop()
 
-# Se chegou aqui, o arquivo foi enviado
+# ============================================================
+# PROCESSAMENTO APÓS UPLOAD
+# ============================================================
 with st.spinner("Processando dados..."):
     df = carregar_dados(uploaded_file)
 if df is None:
@@ -310,9 +392,7 @@ if df is None:
     st.stop()
 st.success(f"✅ {df.shape[0]:,} registros carregados")
 
-# ============================================================
-# FILTROS
-# ============================================================
+# Filtros
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🧬 Filtros")
 df_filtrado = df.copy()
@@ -333,7 +413,7 @@ if "regiao_nome" in df.columns:
         df_filtrado = df_filtrado[df_filtrado["regiao_nome"].isin(reg_sel)]
 
 # ============================================================
-# KPIs ENTERPRISE
+# DASHBOARD COMPLETO APÓS UPLOAD (mantido da versão anterior)
 # ============================================================
 total_volume = df_filtrado["valor_pago"].sum()
 total_bolsas = df_filtrado.shape[0]
@@ -346,167 +426,70 @@ if len(evolucao_ano) >= 2:
     delta_sinal = "▲" if delta_pct > 0 else "▼"
 else:
     delta_pct = 0
-    delta_classe = "delta-up"
     delta_sinal = ""
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.markdown(f"""
-    <div class="kpi-card">
-        <div class="kpi-title">💰 INVESTIMENTO TOTAL</div>
-        <div class="kpi-value">{fmt_brl(total_volume)}</div>
-        <div class="kpi-delta {delta_classe}">{delta_sinal} {abs(delta_pct):.1f}% vs ano anterior</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric("💰 INVESTIMENTO TOTAL", fmt_brl(total_volume), delta=f"{delta_sinal} {abs(delta_pct):.1f}% vs ano anterior")
 with col2:
-    st.markdown(f"""
-    <div class="kpi-card">
-        <div class="kpi-title">🎓 BOLSAS CONCEDIDAS</div>
-        <div class="kpi-value">{fmt_num(total_bolsas)}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric("🎓 BOLSAS", fmt_num(total_bolsas))
 with col3:
-    st.markdown(f"""
-    <div class="kpi-card">
-        <div class="kpi-title">👥 PESQUISADORES</div>
-        <div class="kpi-value">{fmt_num(n_pesq)}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric("👥 PESQUISADORES", fmt_num(n_pesq))
 with col4:
-    st.markdown(f"""
-    <div class="kpi-card">
-        <div class="kpi-title">🎫 TICKET MÉDIO</div>
-        <div class="kpi-value">{fmt_brl(ticket_medio)}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric("🎫 TICKET MÉDIO", fmt_brl(ticket_medio))
 
-# ============================================================
-# INSIGHTS AUTOMÁTICOS
-# ============================================================
-st.markdown("## 🔍 Inteligência Analítica")
+st.markdown("## 🔍 Insights Automáticos")
 if "regiao_nome" in df_filtrado.columns:
     reg_share = df_filtrado.groupby("regiao_nome")["valor_pago"].sum()
     top_reg = reg_share.idxmax()
     pct_reg = (reg_share.max() / total_volume) * 100
-    msg_reg = f"📍 Região líder: **{top_reg}** com **{pct_reg:.1f}%** dos recursos."
-else:
-    msg_reg = "Dados regionais não disponíveis."
+    st.info(f"📍 Região líder: **{top_reg}** com **{pct_reg:.1f}%** dos recursos.")
 
 if "grande_area" in df_filtrado.columns:
     area_share = df_filtrado.groupby("grande_area")["valor_pago"].sum()
     top_area = area_share.idxmax()
     pct_area = (area_share.max() / total_volume) * 100
-    msg_area = f"🧬 Área predominante: **{top_area}** concentra **{pct_area:.1f}%** dos investimentos."
-else:
-    msg_area = "Dados de área não disponíveis."
+    st.info(f"🧬 Área predominante: **{top_area}** concentra **{pct_area:.1f}%** dos investimentos.")
 
 if len(evolucao_ano) >= 3:
-    ult_ano = evolucao_ano.index[-1]
-    penult_ano = evolucao_ano.index[-2]
     cresc_anual = (evolucao_ano.iloc[-1] / evolucao_ano.iloc[-2] - 1) * 100
-    msg_cresc = f"📈 Variação anual: {cresc_anual:+.1f}% entre {penult_ano} e {ult_ano}."
-else:
-    msg_cresc = "Série temporal insuficiente para tendência."
+    st.info(f"📈 Variação anual: {cresc_anual:+.1f}% no último ano.")
 
-col_i1, col_i2, col_i3 = st.columns(3)
-with col_i1:
-    st.markdown(f'<div class="insight-card">{msg_reg}</div>', unsafe_allow_html=True)
-with col_i2:
-    st.markdown(f'<div class="insight-card">{msg_area}</div>', unsafe_allow_html=True)
-with col_i3:
-    st.markdown(f'<div class="insight-card">{msg_cresc}</div>', unsafe_allow_html=True)
-
-# ============================================================
-# MAPA DE CALOR DO BRASIL (com dados reais)
-# ============================================================
-st.markdown("## 🗺️ Distribuição Geográfica (Intensidade de Investimento)")
+# Mapa real
 if "unidade_federacao" in df_filtrado.columns:
-    fig_mapa = mapa_brasil_real(df_filtrado)
+    st.markdown("## 🗺️ Distribuição Geográfica (Intensidade de Investimento)")
+    uf_data = df_filtrado.groupby("unidade_federacao")["valor_pago"].sum().reset_index()
+    uf_data.columns = ['uf', 'valor']
+    fig_mapa = px.choropleth(
+        uf_data,
+        locations='uf',
+        locationmode='BRA-states',
+        color='valor',
+        color_continuous_scale='Blues',
+        title='🌡️ Intensidade do Investimento por Estado'
+    )
+    fig_mapa.update_layout(
+        geo=dict(bgcolor='rgba(0,0,0,0)', lakecolor='rgba(0,0,0,0)'),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='white'),
+        margin=dict(l=0, r=0, t=50, b=0),
+        height=500
+    )
     st.plotly_chart(fig_mapa, use_container_width=True)
-else:
-    st.info("Coluna 'unidade_federacao' não encontrada. Não é possível gerar o mapa.")
 
-# ============================================================
-# TREEMAP (Áreas)
-# ============================================================
-if "grande_area" in df_filtrado.columns:
-    st.markdown("## 🌳 Treemap – Áreas do Conhecimento")
-    treemap_data = df_filtrado.groupby("grande_area")["valor_pago"].sum().reset_index()
-    fig_treemap = px.treemap(treemap_data, path=["grande_area"], values="valor_pago",
-                             title="Distribuição do investimento por área",
-                             color="valor_pago", color_continuous_scale="Blues")
-    fig_treemap.update_layout(template="plotly_dark", margin=dict(t=30, l=0, r=0, b=0))
-    st.plotly_chart(fig_treemap, use_container_width=True)
+# Ranking pesquisadores
+if "beneficiario" in df_filtrado.columns:
+    st.markdown("## 🏆 Top 10 Pesquisadores")
+    top_people = df_filtrado.groupby("beneficiario")["valor_pago"].sum().sort_values(ascending=False).head(10).reset_index()
+    top_people.columns = ["Pesquisador", "Total"]
+    top_people["Total"] = top_people["Total"].apply(fmt_brl)
+    st.dataframe(top_people, use_container_width=True, hide_index=True)
 
-# ============================================================
-# ANÁLISE ESTATÍSTICA (Boxplot + Histograma)
-# ============================================================
-st.markdown("## 📊 Análise Estatística dos Valores")
-col_stats1, col_stats2 = st.columns(2)
-with col_stats1:
-    fig_box = px.box(df_filtrado, y="valor_pago", title="Distribuição dos valores das bolsas (outliers)")
-    fig_box.update_layout(template="plotly_dark", height=400)
-    st.plotly_chart(fig_box, use_container_width=True)
-with col_stats2:
-    fig_hist = px.histogram(df_filtrado, x="valor_pago", nbins=50, marginal="violin",
-                            title="Histograma + densidade")
-    fig_hist.update_layout(template="plotly_dark", height=400)
-    st.plotly_chart(fig_hist, use_container_width=True)
-
-# ============================================================
-# PROJEÇÃO LINEAR
-# ============================================================
-if "ano" in df_filtrado.columns and len(evolucao_ano) >= 3:
-    st.markdown("## 🔮 Projeção de Investimento (Próximos 2 anos)")
-    anos_futuros = np.arange(evolucao_ano.index[-1]+1, evolucao_ano.index[-1]+3).reshape(-1,1)
-    X = np.array(evolucao_ano.index).reshape(-1,1)
-    y = evolucao_ano.values
-    model = LinearRegression()
-    model.fit(X, y)
-    pred = model.predict(anos_futuros)
-    proj = pd.DataFrame({"ano": anos_futuros.flatten(), "projecao": pred})
-    fig_proj = px.line(proj, x="ano", y="projecao", markers=True, title="Tendência linear projetada")
-    fig_proj.add_scatter(x=evolucao_ano.index, y=evolucao_ano.values, mode="lines+markers", name="Histórico")
-    fig_proj.update_layout(template="plotly_dark", height=450)
-    st.plotly_chart(fig_proj, use_container_width=True)
-
-# ============================================================
-# RANKINGS
-# ============================================================
-st.markdown("## 🏆 Rankings")
-col_rank1, col_rank2 = st.columns(2)
-with col_rank1:
-    st.markdown("#### 🥇 Top 10 Pesquisadores")
-    if "beneficiario" in df_filtrado.columns:
-        top_people = df_filtrado.groupby("beneficiario")["valor_pago"].sum().sort_values(ascending=False).head(10).reset_index()
-        top_people.columns = ["Pesquisador", "Total"]
-        top_people["Total"] = top_people["Total"].apply(fmt_brl)
-        st.dataframe(top_people, use_container_width=True, hide_index=True)
-    else:
-        st.info("Dados indisponíveis")
-with col_rank2:
-    st.markdown("#### 🥇 Top 10 Instituições")
-    if "instituicao_destino" in df_filtrado.columns:
-        top_inst = df_filtrado.groupby("instituicao_destino")["valor_pago"].sum().sort_values(ascending=False).head(10).reset_index()
-        top_inst.columns = ["Instituição", "Total"]
-        top_inst["Total"] = top_inst["Total"].apply(fmt_brl)
-        st.dataframe(top_inst, use_container_width=True, hide_index=True)
-    else:
-        st.info("Dados indisponíveis")
-
-# ============================================================
-# EXPORTAÇÃO
-# ============================================================
-st.markdown("## 📥 Exportar")
-csv = df_filtrado.to_csv(index=False).encode("utf-8")
-st.download_button("📄 Baixar dados filtrados (CSV)", csv, file_name="cnpq_analytics.csv", mime="text/csv")
-
-# ============================================================
-# RODAPÉ
-# ============================================================
+# Rodapé
 st.markdown("---")
 st.markdown("""
-<div style="text-align: center; color: #6B7280; font-size: 0.7rem; padding: 1rem;">
+<div class="footer">
     🔬 CNPq Analytics · Fonte: Portal Brasileiro de Dados Abertos (CGU/CNPq)<br>
     Dashboard inteligente para análise estratégica de investimentos em C&T.
 </div>
