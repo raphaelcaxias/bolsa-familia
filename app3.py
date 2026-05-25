@@ -57,55 +57,40 @@ st.markdown(f"""
 .hero {{
     background: linear-gradient(135deg, rgba(56,189,248,0.1) 0%, rgba(16,185,129,0.05) 100%);
     border-radius: 2rem;
-    padding: 2.5rem 2rem;
+    padding: 2rem 2rem;
     margin-bottom: 2rem;
     border: 1px solid {COR_BORDA};
     box-shadow: 0 0 40px {COR_GLOW};
-    position: relative;
-    overflow: hidden;
-}}
-
-.hero::before {{
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -20%;
-    width: 60%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(56,189,248,0.15) 0%, transparent 70%);
-    pointer-events: none;
 }}
 
 .hero h1 {{
-    font-size: 3.5rem;
+    font-size: 3rem;
     font-weight: 800;
     background: linear-gradient(135deg, #FFFFFF, #38BDF8);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    letter-spacing: -0.02em;
     margin-bottom: 0.5rem;
 }}
 
 .hero p {{
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: {COR_TEXTO_MUTED};
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.2rem;
 }}
 
 .hero-badges {{
     display: flex;
-    gap: 1rem;
+    gap: 0.8rem;
     flex-wrap: wrap;
 }}
 
 .hero-badge {{
     background: rgba(56,189,248,0.15);
     border: 1px solid {COR_BORDA};
-    padding: 0.4rem 1rem;
+    padding: 0.3rem 0.8rem;
     border-radius: 2rem;
-    font-size: 0.8rem;
-    font-weight: 500;
+    font-size: 0.75rem;
     color: {COR_AZUL};
 }}
 
@@ -124,30 +109,28 @@ st.markdown(f"""
     backdrop-filter: blur(10px);
     border: 1px solid {COR_BORDA};
     border-radius: 1.2rem;
-    padding: 1.2rem;
+    padding: 1rem;
     text-align: center;
     transition: all 0.3s ease;
 }}
 
 .preview-card:hover {{
-    transform: translateY(-5px);
+    transform: translateY(-4px);
     border-color: {COR_AZUL};
-    box-shadow: 0 0 25px {COR_GLOW};
+    box-shadow: 0 0 20px {COR_GLOW};
 }}
 
 .preview-number {{
-    font-size: 2rem;
+    font-size: 1.8rem;
     font-weight: 800;
     color: white;
-    font-family: monospace;
 }}
 
 .preview-label {{
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: {COR_TEXTO_MUTED};
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-top: 0.3rem;
+    margin-top: 0.2rem;
 }}
 
 /* Value Cards */
@@ -158,6 +141,7 @@ st.markdown(f"""
     border-radius: 1rem;
     padding: 1rem;
     text-align: center;
+    height: 100%;
 }}
 
 /* Upload Card */
@@ -166,24 +150,18 @@ st.markdown(f"""
     backdrop-filter: blur(10px);
     border: 2px dashed {COR_AZUL};
     border-radius: 1.5rem;
-    padding: 2rem;
+    padding: 1.5rem;
     text-align: center;
     margin: 1rem 0;
-    transition: all 0.3s ease;
 }}
 
-.upload-card:hover {{
-    border-color: {COR_VERDE};
-    box-shadow: 0 0 30px rgba(56,189,248,0.2);
-}}
-
-/* Botão estilizado */
+/* Botão */
 .stButton > button {{
     background: linear-gradient(135deg, #1E293B, #0F172A);
     border: 1px solid {COR_AZUL};
     border-radius: 2rem;
     color: white;
-    padding: 0.5rem 1.2rem;
+    padding: 0.4rem 1.2rem;
     font-weight: 500;
     transition: all 0.2s;
 }}
@@ -196,11 +174,11 @@ st.markdown(f"""
 /* Footer */
 .footer {{
     text-align: center;
-    padding: 2rem 0 0.5rem;
+    padding: 1.5rem 0 0.5rem;
     margin-top: 2rem;
     border-top: 1px solid {COR_BORDA};
     color: {COR_TEXTO_MUTED};
-    font-size: 0.7rem;
+    font-size: 0.65rem;
 }}
 
 /* Sidebar */
@@ -254,26 +232,25 @@ def carregar_dados(uploaded_file):
             continue
     return None
 
-def mapa_brasil_vazio():
-    uf_siglas = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-                 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
-                 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
-    df_vazio = pd.DataFrame({'uf': uf_siglas, 'valor': [0]*len(uf_siglas)})
-    fig = px.choropleth(
-        df_vazio,
-        locations='uf',
-        locationmode='BRA-states',
-        color='valor',
-        color_continuous_scale='Blues',
-        title='📊 Distribuição do Investimento por UF'
-    )
+def grafico_barras_regional_vazio():
+    """Gráfico de barras vazio (placeholder) antes do upload"""
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=['Aguardando dados...'],
+        y=[0],
+        marker_color=COR_AZUL,
+        text=['Carregue o CSV para visualizar'],
+        textposition='outside'
+    ))
     fig.update_layout(
-        geo=dict(bgcolor='rgba(0,0,0,0)', lakecolor='rgba(0,0,0,0)'),
+        title="📊 Distribuição Regional do Investimento",
+        template="plotly_dark",
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white'),
-        margin=dict(l=0, r=0, t=40, b=0),
-        height=450
+        height=400,
+        xaxis_title="Região",
+        yaxis_title="Investimento (R$)",
+        font=dict(color='white')
     )
     return fig
 
@@ -292,6 +269,23 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# Fonte dos dados e limites técnicos
+col_info1, col_info2 = st.columns(2)
+with col_info1:
+    st.markdown("""
+    <div style="background: rgba(18,25,45,0.5); border-radius: 1rem; padding: 1rem; margin-bottom: 1rem;">
+        <h4 style="margin: 0 0 0.3rem 0;">📌 Fonte dos dados</h4>
+        <p style="font-size: 0.75rem; color: #94A3B8;">Os dados são provenientes do <strong>Portal Brasileiro de Dados Abertos (CGU/CNPq)</strong>, com registros de bolsas de pesquisa concedidas entre 2014 e 2027.</p>
+    </div>
+    """, unsafe_allow_html=True)
+with col_info2:
+    st.markdown("""
+    <div style="background: rgba(18,25,45,0.5); border-radius: 1rem; padding: 1rem; margin-bottom: 1rem;">
+        <h4 style="margin: 0 0 0.3rem 0;">⚙️ Limite técnico</h4>
+        <p style="font-size: 0.75rem; color: #94A3B8;">Arquivo CSV de até <strong>200 MB</strong> (recomendado até 500 mil linhas). O dashboard processa a base completa de 213.735 registros em tempo real.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # Prévia dos dados
 st.markdown("### 📈 Conheça o potencial da análise")
@@ -325,9 +319,9 @@ with col4:
     </div>
     """, unsafe_allow_html=True)
 
-# Mapa vazio como preview
+# Gráfico de barras vazio
 st.markdown("### 🗺️ Visualize a distribuição geográfica")
-st.plotly_chart(mapa_brasil_vazio(), use_container_width=True)
+st.plotly_chart(grafico_barras_regional_vazio(), use_container_width=True)
 
 # Cards de valor agregado
 st.markdown("### 💡 O que você vai descobrir")
@@ -335,35 +329,35 @@ col_v1, col_v2, col_v3 = st.columns(3)
 with col_v1:
     st.markdown("""
     <div class="value-card">
-        <span style="font-size: 2rem;">🎯</span>
+        <span style="font-size: 1.8rem;">🎯</span>
         <h4>Concentração regional</h4>
-        <p style="color: #94A3B8; font-size: 0.8rem;">Identifique quais regiões lideram os investimentos</p>
+        <p style="color: #94A3B8; font-size: 0.75rem;">Identifique quais regiões lideram os investimentos</p>
     </div>
     """, unsafe_allow_html=True)
 with col_v2:
     st.markdown("""
     <div class="value-card">
-        <span style="font-size: 2rem;">🧬</span>
+        <span style="font-size: 1.8rem;">🧬</span>
         <h4>Áreas do conhecimento</h4>
-        <p style="color: #94A3B8; font-size: 0.8rem;">Saúde, Engenharia, Humanas – onde o dinheiro está</p>
+        <p style="color: #94A3B8; font-size: 0.75rem;">Saúde, Engenharia, Humanas – onde o dinheiro está</p>
     </div>
     """, unsafe_allow_html=True)
 with col_v3:
     st.markdown("""
     <div class="value-card">
-        <span style="font-size: 2rem;">🏆</span>
+        <span style="font-size: 1.8rem;">🏆</span>
         <h4>Rankings de impacto</h4>
-        <p style="color: #94A3B8; font-size: 0.8rem;">Top pesquisadores e instituições mais financiadas</p>
+        <p style="color: #94A3B8; font-size: 0.75rem;">Top pesquisadores e instituições mais financiadas</p>
     </div>
     """, unsafe_allow_html=True)
 
 # Upload card
 st.markdown("""
 <div class="upload-card">
-    <span style="font-size: 3rem;">📂</span>
+    <span style="font-size: 2.5rem;">📂</span>
     <h3>Carregue o arquivo CSV</h3>
-    <p style="color: #94A3B8;">Baixe o dataset oficial do CNPq e faça upload para iniciar a análise completa</p>
-    <p style="color: #3B82F6; font-size: 0.8rem; margin-top: 0.5rem;">⬅️ Use o menu lateral para enviar o arquivo</p>
+    <p style="color: #94A3B8; font-size: 0.8rem;">Baixe o dataset oficial do CNPq e faça upload para iniciar a análise completa</p>
+    <p style="color: #3B82F6; font-size: 0.75rem;">⬅️ Use o menu lateral para enviar o arquivo</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -388,7 +382,7 @@ with st.sidebar:
 with st.spinner("Processando dados..."):
     df = carregar_dados(uploaded_file)
 if df is None:
-    st.error("Erro no CSV. Verifique separador ';' e encoding.")
+    st.error("❌ Erro no CSV. Verifique separador ';' e encoding (latin1/utf-8).")
     st.stop()
 st.success(f"✅ {df.shape[0]:,} registros carregados")
 
@@ -413,7 +407,7 @@ if "regiao_nome" in df.columns:
         df_filtrado = df_filtrado[df_filtrado["regiao_nome"].isin(reg_sel)]
 
 # ============================================================
-# DASHBOARD COMPLETO APÓS UPLOAD (mantido da versão anterior)
+# DASHBOARD COMPLETO APÓS UPLOAD
 # ============================================================
 total_volume = df_filtrado["valor_pago"].sum()
 total_bolsas = df_filtrado.shape[0]
@@ -422,7 +416,6 @@ n_pesq = df_filtrado["beneficiario"].nunique() if "beneficiario" in df_filtrado.
 evolucao_ano = df_filtrado.groupby("ano")["valor_pago"].sum().sort_index()
 if len(evolucao_ano) >= 2:
     delta_pct = (evolucao_ano.iloc[-1] / evolucao_ano.iloc[-2] - 1) * 100
-    delta_classe = "delta-up" if delta_pct > 0 else "delta-down"
     delta_sinal = "▲" if delta_pct > 0 else "▼"
 else:
     delta_pct = 0
@@ -455,28 +448,17 @@ if len(evolucao_ano) >= 3:
     cresc_anual = (evolucao_ano.iloc[-1] / evolucao_ano.iloc[-2] - 1) * 100
     st.info(f"📈 Variação anual: {cresc_anual:+.1f}% no último ano.")
 
-# Mapa real
-if "unidade_federacao" in df_filtrado.columns:
-    st.markdown("## 🗺️ Distribuição Geográfica (Intensidade de Investimento)")
-    uf_data = df_filtrado.groupby("unidade_federacao")["valor_pago"].sum().reset_index()
-    uf_data.columns = ['uf', 'valor']
-    fig_mapa = px.choropleth(
-        uf_data,
-        locations='uf',
-        locationmode='BRA-states',
-        color='valor',
-        color_continuous_scale='Blues',
-        title='🌡️ Intensidade do Investimento por Estado'
-    )
-    fig_mapa.update_layout(
-        geo=dict(bgcolor='rgba(0,0,0,0)', lakecolor='rgba(0,0,0,0)'),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white'),
-        margin=dict(l=0, r=0, t=50, b=0),
-        height=500
-    )
-    st.plotly_chart(fig_mapa, use_container_width=True)
+# Gráfico de barras regional com dados reais
+if "regiao_nome" in df_filtrado.columns:
+    st.markdown("## 🗺️ Distribuição Regional do Investimento")
+    reg_data = df_filtrado.groupby("regiao_nome")["valor_pago"].sum().reset_index()
+    reg_data.columns = ["Região", "Valor"]
+    fig_reg = px.bar(reg_data, x="Região", y="Valor", color="Valor",
+                     color_continuous_scale="Blues", text=reg_data["Valor"].apply(lambda x: fmt_brl(x)),
+                     title="Investimento por Região")
+    fig_reg.update_traces(textposition="outside")
+    fig_reg.update_layout(template="plotly_dark", height=450, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+    st.plotly_chart(fig_reg, use_container_width=True)
 
 # Ranking pesquisadores
 if "beneficiario" in df_filtrado.columns:
@@ -491,6 +473,6 @@ st.markdown("---")
 st.markdown("""
 <div class="footer">
     🔬 CNPq Analytics · Fonte: Portal Brasileiro de Dados Abertos (CGU/CNPq)<br>
-    Dashboard inteligente para análise estratégica de investimentos em C&T.
+    Dashboard desenvolvido para portfólio de Análise de Dados.
 </div>
 """, unsafe_allow_html=True)
