@@ -10,7 +10,6 @@ from sklearn.preprocessing import StandardScaler
 from datetime import datetime
 import warnings
 import base64
-from io import BytesIO
 
 warnings.filterwarnings("ignore")
 
@@ -54,7 +53,6 @@ st.markdown(f"""
 
 .block-container {{ padding: 1.5rem 2rem !important; }}
 
-/* Hero Section */
 .hero {{
     background: linear-gradient(135deg, rgba(56,189,248,0.1) 0%, rgba(16,185,129,0.05) 100%);
     border-radius: 2rem;
@@ -95,7 +93,6 @@ st.markdown(f"""
     color: {COR_AZUL};
 }}
 
-/* Cards */
 .preview-card, .value-card, .upload-card, .kpi-card {{
     background: {COR_CARD};
     backdrop-filter: blur(10px);
@@ -129,7 +126,6 @@ st.markdown(f"""
     margin: 1rem 0;
 }}
 
-/* Botão download */
 .download-btn {{
     display: inline-block;
     background: linear-gradient(135deg, #1E293B, #0F172A);
@@ -141,20 +137,19 @@ st.markdown(f"""
     font-size: 0.8rem;
     transition: all 0.2s;
     margin-top: 0.5rem;
+    text-align: center;
 }}
 .download-btn:hover {{
     border-color: {COR_VERDE};
     box-shadow: 0 0 12px {COR_GLOW};
 }}
 
-/* Sidebar */
 section[data-testid="stSidebar"] {{
     background: rgba(10, 15, 28, 0.95);
     backdrop-filter: blur(12px);
     border-right: 1px solid {COR_BORDA};
 }}
 
-/* Footer */
 .footer {{
     text-align: center;
     padding: 1.5rem 0 0.5rem;
@@ -164,18 +159,12 @@ section[data-testid="stSidebar"] {{
     font-size: 0.65rem;
 }}
 
-/* Metricas */
 .stMetric {{
     background: {COR_CARD};
     backdrop-filter: blur(10px);
     border: 1px solid {COR_BORDA};
     border-radius: 1rem;
     padding: 0.5rem;
-}}
-
-/* Progress bar */
-.stProgress > div > div {{
-    background-color: {COR_AZUL};
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -197,22 +186,15 @@ def fmt_num(valor):
         return "0"
     return f"{int(valor):,}".replace(",", ".")
 
-def download_link(df, filename="dados_cnpq.csv"):
-    csv = df.to_csv(index=False).encode('utf-8')
-    b64 = base64.b64encode(csv).decode()
-    href = f'<a href="data:file/csv;base64,{b64}" download="{filename}" class="download-btn">📥 Baixar CSV</a>'
-    return href
-
 @st.cache_data
-def carregar_dados(uploaded_file, progress_bar):
+def carregar_dados(uploaded_file):
+    """Carrega CSV com cache – SEM barra de progresso"""
     for enc in ["latin1", "utf-8", "cp1252"]:
         try:
             uploaded_file.seek(0)
-            progress_bar.progress(30, text="Lendo arquivo...")
             df = pd.read_csv(uploaded_file, delimiter=';', encoding=enc, low_memory=False)
             df.columns = df.columns.str.lower().str.strip()
             
-            progress_bar.progress(60, text="Processando valores...")
             if 'valor_pago' in df.columns:
                 df['valor_pago'] = pd.to_numeric(
                     df['valor_pago'].astype(str).str.replace(',', '.', regex=False).str.extract(r'(\d+\.?\d*)', expand=False),
@@ -221,7 +203,6 @@ def carregar_dados(uploaded_file, progress_bar):
             df = df.dropna(subset=['valor_pago'])
             df = df[df['valor_pago'] > 0]
             
-            progress_bar.progress(80, text="Formatando datas...")
             if 'data_inicio_processo' in df.columns:
                 df['data_inicio_processo'] = pd.to_datetime(df['data_inicio_processo'], errors='coerce', dayfirst=True)
                 df['ano'] = df['data_inicio_processo'].dt.year
@@ -230,7 +211,6 @@ def carregar_dados(uploaded_file, progress_bar):
             if 'regiao' in df.columns:
                 df['regiao_nome'] = df['regiao'].map(regioes_map).fillna(df['regiao'])
             
-            progress_bar.progress(100, text="Concluído!")
             return df, enc
         except:
             continue
@@ -281,7 +261,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Fonte e limites em UMA LINHA
 col_info1, col_info2, col_info3 = st.columns(3)
 with col_info1:
     st.markdown("""
@@ -304,7 +283,6 @@ with col_info3:
     </div>
     """, unsafe_allow_html=True)
 
-# Prévia dos dados
 st.markdown("### 📈 Conheça o potencial")
 col1, col2, col3, col4 = st.columns(4)
 for col, num, label in zip([col1, col2, col3, col4],
@@ -318,17 +296,15 @@ for col, num, label in zip([col1, col2, col3, col4],
         </div>
         """, unsafe_allow_html=True)
 
-# O que você vai descobrir
 st.markdown("### 💡 O que você vai descobrir")
 col_v1, col_v2, col_v3 = st.columns(3)
 with col_v1:
     st.markdown('<div class="value-card"><span style="font-size:1.5rem;">🎯</span><h4>Concentração regional</h4><p style="color:#94A3B8; font-size:0.7rem;">Quais regiões lideram os investimentos</p></div>', unsafe_allow_html=True)
 with col_v2:
-    st.markdown('<div class="value-card"><span style="font-size:1.5rem;">🧬</span><h4>Áreas do conhecimento</h4><p style="color:#94A3B8; font-size:0.7rem;">Saúde, Engenharia, Humanas – onde o dinheiro está</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="value-card"><span style="font-size:1.5rem;">🧬</span><h4>Áreas do conhecimento</h4><p style="color:#94A3B8; font-size:0.7rem;">Saúde, Engenharia, Humanas</p></div>', unsafe_allow_html=True)
 with col_v3:
     st.markdown('<div class="value-card"><span style="font-size:1.5rem;">🏆</span><h4>Rankings de impacto</h4><p style="color:#94A3B8; font-size:0.7rem;">Top pesquisadores e instituições</p></div>', unsafe_allow_html=True)
 
-# Upload card
 st.markdown("""
 <div class="upload-card">
     <span style="font-size:2rem;">📂</span>
@@ -352,10 +328,8 @@ with st.sidebar:
         st.info("👈 Envie o arquivo para iniciar a análise")
         st.stop()
     
-    # Barra de progresso durante carregamento
-    progress_bar = st.progress(0, text="Iniciando...")
-    df, encoding = carregar_dados(uploaded_file, progress_bar)
-    progress_bar.empty()
+    with st.spinner("🔄 Processando arquivo de 110MB... Isso pode levar alguns segundos"):
+        df, encoding = carregar_dados(uploaded_file)
     
     if df is None:
         st.error("❌ Erro no CSV. Verifique separador ';' e encoding (latin1/utf-8).")
@@ -364,7 +338,6 @@ with st.sidebar:
     st.success(f"✅ {df.shape[0]:,} registros carregados")
     st.caption(f"📁 Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
     
-    # Filtros (aparecem APÓS o upload)
     st.markdown("---")
     st.markdown("### 🧬 Filtros")
     df_filtrado = df.copy()
@@ -396,10 +369,8 @@ ticket_medio = total_volume / total_bolsas if total_bolsas > 0 else 0
 n_pesq = df_filtrado["beneficiario"].nunique() if "beneficiario" in df_filtrado.columns else 0
 n_inst = df_filtrado["instituicao_destino"].nunique() if "instituicao_destino" in df_filtrado.columns else 0
 
-# KPIs com métricas avançadas
 col1, col2, col3, col4 = st.columns(4)
 
-# CAGR (taxa de crescimento anual composta)
 if "ano" in df_filtrado.columns:
     evol_ano = df_filtrado.groupby("ano")["valor_pago"].sum()
     cagr = calcular_cagr(evol_ano)
@@ -416,11 +387,10 @@ with col3:
 with col4:
     st.metric("🏛️ INSTITUIÇÕES", fmt_num(n_inst))
 
-# Estatísticas descritivas adicionais
 st.caption(f"📊 Ticket médio: {fmt_brl(ticket_medio)} | Média por pesquisador: {fmt_brl(total_volume/n_pesq) if n_pesq>0 else 'N/A'}")
 
 # ============================================================
-# RESUMO EXECUTIVO EM LINGUAGEM NATURAL
+# RESUMO EXECUTIVO
 # ============================================================
 st.markdown("## 🔍 Resumo Executivo")
 
@@ -449,7 +419,6 @@ if "ano" in df_filtrado.columns:
         else:
             insights.append(f"📊 Estabilidade: variação de **{crescimento:+.1f}%** no último ano.")
 
-# HHI (concentração de mercado)
 if "nome_conglomerado_financeiro" in df_filtrado.columns:
     hhi = calcular_hhi(df_filtrado, "valor_pago")
     if hhi > 2500:
@@ -463,7 +432,7 @@ for insight in insights:
     st.info(insight)
 
 # ============================================================
-# ABAS COM GRÁFICOS INTERATIVOS
+# ABAS
 # ============================================================
 st.markdown("## 📊 Análises Interativas")
 
@@ -472,18 +441,16 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "🏆 Rankings", "📊 Estatísticas", "🤖 Análises Avançadas"
 ])
 
-# ---------- TAB 1: EVOLUÇÃO TEMPORAL ----------
+# TAB 1: EVOLUÇÃO TEMPORAL
 with tab1:
     if "ano" in df_filtrado.columns:
         evol_data = df_filtrado.groupby("ano")["valor_pago"].sum().reset_index()
         fig_evol = px.line(evol_data, x="ano", y="valor_pago", markers=True,
-                           title="Evolução do Investimento por Ano",
-                           labels={"ano": "Ano", "valor_pago": "Investimento (R$)"})
+                           title="Evolução do Investimento por Ano")
         fig_evol.update_layout(template="plotly_dark", height=450)
         fig_evol.update_traces(line=dict(width=3, color=COR_AZUL), marker=dict(size=8, color=COR_VERDE))
         st.plotly_chart(fig_evol, use_container_width=True)
         
-        # Projeção linear
         if len(evol_data) >= 3:
             st.markdown("#### 🔮 Projeção para próximos 2 anos")
             X = np.array(evol_data["ano"]).reshape(-1, 1)
@@ -500,7 +467,7 @@ with tab1:
     else:
         st.info("Coluna 'ano' não disponível para análise temporal.")
 
-# ---------- TAB 2: DISTRIBUIÇÃO REGIONAL ----------
+# TAB 2: DISTRIBUIÇÃO REGIONAL
 with tab2:
     if "regiao_nome" in df_filtrado.columns:
         reg_data = df_filtrado.groupby("regiao_nome")["valor_pago"].sum().reset_index()
@@ -524,7 +491,6 @@ with tab2:
             fig_pie.update_traces(textposition="inside", textinfo="percent+label")
             st.plotly_chart(fig_pie, use_container_width=True)
         
-        # Ticket médio por região
         ticket_reg = df_filtrado.groupby("regiao_nome")["valor_pago"].mean().reset_index()
         ticket_reg.columns = ["Região", "Ticket Médio"]
         fig_ticket = px.bar(ticket_reg, x="Região", y="Ticket Médio", color="Ticket Médio",
@@ -534,7 +500,7 @@ with tab2:
     else:
         st.info("Dados regionais não disponíveis.")
 
-# ---------- TAB 3: ÁREAS DO CONHECIMENTO ----------
+# TAB 3: ÁREAS DO CONHECIMENTO
 with tab3:
     if "grande_area" in df_filtrado.columns:
         area_data = df_filtrado.groupby("grande_area")["valor_pago"].sum().sort_values(ascending=False).head(10).reset_index()
@@ -551,14 +517,12 @@ with tab3:
             st.plotly_chart(fig_area, use_container_width=True)
         
         with col_a2:
-            # Treemap
             fig_treemap = px.treemap(area_data, path=["Área"], values="Valor",
                                      title="Distribuição do Investimento por Área (Treemap)",
                                      color="Valor", color_continuous_scale="Blues")
             fig_treemap.update_layout(template="plotly_dark", height=500)
             st.plotly_chart(fig_treemap, use_container_width=True)
         
-        # Análise de Pareto (80/20)
         st.markdown("#### 📊 Análise de Pareto (80/20)")
         pareto_data = calcular_pareto(area_data, "Valor")
         fig_pareto = go.Figure()
@@ -569,7 +533,7 @@ with tab3:
     else:
         st.info("Dados de área do conhecimento não disponíveis.")
 
-# ---------- TAB 4: RANKINGS ----------
+# TAB 4: RANKINGS
 with tab4:
     col_r1, col_r2 = st.columns(2)
     
@@ -583,9 +547,8 @@ with tab4:
             top_people["Participação"] = top_people["Total"].apply(lambda x: f"{(float(x.replace('R$', '').replace('M', '').replace(',', '.').strip()) * 1000000 / total_pesq * 100):.1f}%")
             st.dataframe(top_people, use_container_width=True, hide_index=True)
             
-            # Busca textual
             st.markdown("#### 🔍 Buscar pesquisador")
-            busca = st.text_input("Digite o nome do pesquisador")
+            busca = st.text_input("Digite o nome")
             if busca:
                 resultados = df_filtrado[df_filtrado["beneficiario"].str.contains(busca, case=False, na=False)]
                 if not resultados.empty:
@@ -616,13 +579,13 @@ with tab4:
     else:
         st.info("Dados de modalidade não disponíveis")
 
-# ---------- TAB 5: ESTATÍSTICAS ----------
+# TAB 5: ESTATÍSTICAS
 with tab5:
     col_s1, col_s2 = st.columns(2)
     
     with col_s1:
-        st.markdown("#### 📦 Boxplot (Distribuição dos valores)")
-        fig_box = px.box(df_filtrado, y="valor_pago", title="Distribuição dos valores das bolsas (outliers)")
+        st.markdown("#### 📦 Boxplot")
+        fig_box = px.box(df_filtrado, y="valor_pago", title="Distribuição dos valores (outliers)")
         fig_box.update_layout(template="plotly_dark", height=450)
         st.plotly_chart(fig_box, use_container_width=True)
         
@@ -633,8 +596,6 @@ with tab5:
             "Desvio Padrão": fmt_brl(df_filtrado["valor_pago"].std()),
             "Mínimo": fmt_brl(df_filtrado["valor_pago"].min()),
             "Máximo": fmt_brl(df_filtrado["valor_pago"].max()),
-            "Q1 (25%)": fmt_brl(df_filtrado["valor_pago"].quantile(0.25)),
-            "Q3 (75%)": fmt_brl(df_filtrado["valor_pago"].quantile(0.75))
         }
         st.json(stats)
     
@@ -645,17 +606,15 @@ with tab5:
         fig_hist.update_layout(template="plotly_dark", height=450)
         st.plotly_chart(fig_hist, use_container_width=True)
         
-        st.markdown("#### 🔥 Matriz de Correlação")
+        st.markdown("#### 🔥 Correlação")
         if "ano" in df_filtrado.columns and "valor_pago" in df_filtrado.columns:
             corr_data = df_filtrado[["ano", "valor_pago"]].dropna()
             corr_matrix = corr_data.corr()
             fig_corr = px.imshow(corr_matrix, text_auto=True, aspect="auto", title="Correlação Ano × Investimento")
             fig_corr.update_layout(template="plotly_dark", height=350)
             st.plotly_chart(fig_corr, use_container_width=True)
-        else:
-            st.info("Dados insuficientes para matriz de correlação")
 
-# ---------- TAB 6: ANÁLISES AVANÇADAS ----------
+# TAB 6: ANÁLISES AVANÇADAS
 with tab6:
     st.markdown("#### 🧠 Clusterização de Instituições (K-Means)")
     if "nome_conglomerado_financeiro" in df_filtrado.columns and "valor_pago" in df_filtrado.columns:
@@ -671,16 +630,14 @@ with tab6:
             cluster_data["cluster"] = kmeans.fit_predict(features)
             fig_cluster = px.scatter(cluster_data, x="valor_pago", y="numero_operacoes", color="cluster",
                                      size="valor_pago", hover_name="nome_conglomerado_financeiro",
-                                     title="Clusterização de Instituições por Investimento × Operações",
-                                     labels={"valor_pago": "Investimento (R$)", "numero_operacoes": "Operações"})
+                                     title="Clusterização por Investimento × Operações")
             fig_cluster.update_layout(template="plotly_dark", height=500)
             st.plotly_chart(fig_cluster, use_container_width=True)
         else:
-            st.info("Dados insuficientes para clusterização (necessário pelo menos 3 instituições)")
+            st.info("Dados insuficientes para clusterização")
     else:
         st.info("Dados insuficientes para clusterização")
     
-    # Detecção de outliers (pontos acima do percentil 99)
     st.markdown("#### ⚠️ Detecção de Outliers")
     p99 = df_filtrado["valor_pago"].quantile(0.99)
     outliers = df_filtrado[df_filtrado["valor_pago"] > p99]
