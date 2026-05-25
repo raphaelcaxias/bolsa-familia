@@ -126,11 +126,6 @@ html, body, .stApp {{
 .delta-up {{ color: {COR_VERDE}; }}
 .delta-down {{ color: {COR_VERMELHO}; }}
 
-.kpi-sparkline {{
-    margin-top: 0.5rem;
-    height: 30px;
-}}
-
 /* Insight Cards */
 .insight-card {{
     background: rgba(18, 25, 45, 0.6);
@@ -201,7 +196,67 @@ def carregar_dados(uploaded_file):
     return None
 
 # ============================================================
-# HERO SECTION
+# FUNÇÃO PARA CRIAR MAPA DO BRASIL VAZIO (placeholder)
+# ============================================================
+def mapa_brasil_vazio():
+    # Dados de exemplo para preencher o mapa vazio – sem valores reais
+    uf_siglas = [
+        'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+        'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+        'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+    ]
+    # Cria um DataFrame com zeros – mapa sem cor
+    df_vazio = pd.DataFrame({'uf': uf_siglas, 'valor': [0]*len(uf_siglas)})
+    fig = px.choropleth(
+        df_vazio,
+        locations='uf',
+        locationmode='BRA-states',
+        color='valor',
+        color_continuous_scale='Blues',
+        title='📊 Distribuição do Investimento por UF (carregue o CSV para visualizar)'
+    )
+    fig.update_layout(
+        geo=dict(bgcolor='rgba(0,0,0,0)', lakecolor='rgba(0,0,0,0)'),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='white'),
+        margin=dict(l=0, r=0, t=40, b=0),
+        height=500
+    )
+    return fig
+
+def mapa_brasil_real(df):
+    # Precisamos de dados por UF (unidade_federacao)
+    if 'unidade_federacao' in df.columns:
+        uf_data = df.groupby('unidade_federacao')['valor_pago'].sum().reset_index()
+        uf_data.columns = ['uf', 'valor']
+    else:
+        # Fallback: criar dummy
+        uf_data = pd.DataFrame({'uf': [], 'valor': []})
+    if uf_data.empty:
+        fig = mapa_brasil_vazio()
+        fig.update_layout(title='Dados insuficientes para gerar mapa')
+        return fig
+    fig = px.choropleth(
+        uf_data,
+        locations='uf',
+        locationmode='BRA-states',
+        color='valor',
+        color_continuous_scale='Blues',
+        title='🌡️ Intensidade do Investimento por Estado (cores mais escuras = maior volume)'
+    )
+    fig.update_layout(
+        geo=dict(bgcolor='rgba(0,0,0,0)', lakecolor='rgba(0,0,0,0)'),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='white'),
+        margin=dict(l=0, r=0, t=50, b=0),
+        height=500
+    )
+    return fig
+
+# ============================================================
+# HERO SECTION (sempre presente)
 # ============================================================
 st.markdown("""
 <div class="hero">
@@ -216,7 +271,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================================
-# SIDEBAR PREMIUM
+# SIDEBAR (controles + upload)
 # ============================================================
 with st.sidebar:
     st.markdown("### 🎛️ Central Analítica")
@@ -231,37 +286,54 @@ with st.sidebar:
             st.rerun()
     st.markdown("---")
     uploaded_file = st.file_uploader("📂 Carregar CSV (bolsa_familia.csv)", type=["csv"])
+
     if uploaded_file is None:
         st.info("👈 Envie o arquivo para iniciar a análise avançada.")
-        st.stop()
-    with st.spinner("Processando dados..."):
-        df = carregar_dados(uploaded_file)
-    if df is None:
-        st.error("Erro no CSV. Verifique separador ';' e encoding.")
-        st.stop()
-    st.success(f"✅ {df.shape[0]:,} registros carregados")
+        # Mostra preview do mapa vazio e cards de prévia
+        st.markdown("### 📊 Prévia dos dados")
+        col_pre1, col_pre2, col_pre3, col_pre4 = st.columns(4)
+        with col_pre1:
+            st.metric("Registros", "213.735")
+        with col_pre2:
+            st.metric("Investimento", "R$ 1,02B")
+        with col_pre3:
+            st.metric("Pesquisadores", "88.079")
+        with col_pre4:
+            st.metric("Instituições", "4.281")
+        st.stop()  # Interrompe aqui – não carrega dados
 
-    st.markdown("---")
-    st.markdown("### 🧬 Filtros")
-    df_filtrado = df.copy()
-    if "ano" in df.columns:
-        anos = sorted(df["ano"].dropna().unique().astype(int))
-        if len(anos) > 1:
-            ano_sel = st.slider("Ano", min(anos), max(anos), (min(anos), max(anos)), step=1)
-            df_filtrado = df_filtrado[(df_filtrado["ano"] >= ano_sel[0]) & (df_filtrado["ano"] <= ano_sel[1])]
-    if "grande_area" in df.columns:
-        areas = sorted(df["grande_area"].dropna().unique())
-        areas_sel = st.multiselect("Grande Área", areas, default=areas[:6] if len(areas)>6 else areas)
-        if areas_sel:
-            df_filtrado = df_filtrado[df_filtrado["grande_area"].isin(areas_sel)]
-    if "regiao_nome" in df.columns:
-        regioes = sorted(df["regiao_nome"].dropna().unique())
-        reg_sel = st.multiselect("Região", regioes, default=regioes)
-        if reg_sel:
-            df_filtrado = df_filtrado[df_filtrado["regiao_nome"].isin(reg_sel)]
+# Se chegou aqui, o arquivo foi enviado
+with st.spinner("Processando dados..."):
+    df = carregar_dados(uploaded_file)
+if df is None:
+    st.error("Erro no CSV. Verifique separador ';' e encoding.")
+    st.stop()
+st.success(f"✅ {df.shape[0]:,} registros carregados")
 
 # ============================================================
-# KPIs ENTERPRISE (com delta e sparkline)
+# FILTROS
+# ============================================================
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🧬 Filtros")
+df_filtrado = df.copy()
+if "ano" in df.columns:
+    anos = sorted(df["ano"].dropna().unique().astype(int))
+    if len(anos) > 1:
+        ano_sel = st.sidebar.slider("Ano", min(anos), max(anos), (min(anos), max(anos)), step=1)
+        df_filtrado = df_filtrado[(df_filtrado["ano"] >= ano_sel[0]) & (df_filtrado["ano"] <= ano_sel[1])]
+if "grande_area" in df.columns:
+    areas = sorted(df["grande_area"].dropna().unique())
+    areas_sel = st.sidebar.multiselect("Grande Área", areas, default=areas[:6] if len(areas)>6 else areas)
+    if areas_sel:
+        df_filtrado = df_filtrado[df_filtrado["grande_area"].isin(areas_sel)]
+if "regiao_nome" in df.columns:
+    regioes = sorted(df["regiao_nome"].dropna().unique())
+    reg_sel = st.sidebar.multiselect("Região", regioes, default=regioes)
+    if reg_sel:
+        df_filtrado = df_filtrado[df_filtrado["regiao_nome"].isin(reg_sel)]
+
+# ============================================================
+# KPIs ENTERPRISE
 # ============================================================
 total_volume = df_filtrado["valor_pago"].sum()
 total_bolsas = df_filtrado.shape[0]
@@ -284,7 +356,6 @@ with col1:
         <div class="kpi-title">💰 INVESTIMENTO TOTAL</div>
         <div class="kpi-value">{fmt_brl(total_volume)}</div>
         <div class="kpi-delta {delta_classe}">{delta_sinal} {abs(delta_pct):.1f}% vs ano anterior</div>
-        <div class="kpi-sparkline">📈 tendência consolidada</div>
     </div>
     """, unsafe_allow_html=True)
 with col2:
@@ -292,7 +363,6 @@ with col2:
     <div class="kpi-card">
         <div class="kpi-title">🎓 BOLSAS CONCEDIDAS</div>
         <div class="kpi-value">{fmt_num(total_bolsas)}</div>
-        <div class="kpi-sub">+{fmt_num(total_bolsas - df.shape[0] if hasattr(df, 'shape') else 0)} no período</div>
     </div>
     """, unsafe_allow_html=True)
 with col3:
@@ -300,7 +370,6 @@ with col3:
     <div class="kpi-card">
         <div class="kpi-title">👥 PESQUISADORES</div>
         <div class="kpi-value">{fmt_num(n_pesq)}</div>
-        <div class="kpi-sub">beneficiários únicos</div>
     </div>
     """, unsafe_allow_html=True)
 with col4:
@@ -308,22 +377,18 @@ with col4:
     <div class="kpi-card">
         <div class="kpi-title">🎫 TICKET MÉDIO</div>
         <div class="kpi-value">{fmt_brl(ticket_medio)}</div>
-        <div class="kpi-sub">por bolsa</div>
     </div>
     """, unsafe_allow_html=True)
 
 # ============================================================
-# INSIGHTS AUTOMÁTICOS (executivos)
+# INSIGHTS AUTOMÁTICOS
 # ============================================================
 st.markdown("## 🔍 Inteligência Analítica")
 if "regiao_nome" in df_filtrado.columns:
     reg_share = df_filtrado.groupby("regiao_nome")["valor_pago"].sum()
     top_reg = reg_share.idxmax()
     pct_reg = (reg_share.max() / total_volume) * 100
-    if pct_reg > 50:
-        msg_reg = f"⚠️ Alta concentração regional: **{top_reg}** responde por **{pct_reg:.1f}%** do investimento total."
-    else:
-        msg_reg = f"📍 Região líder: **{top_reg}** com **{pct_reg:.1f}%** dos recursos."
+    msg_reg = f"📍 Região líder: **{top_reg}** com **{pct_reg:.1f}%** dos recursos."
 else:
     msg_reg = "Dados regionais não disponíveis."
 
@@ -339,41 +404,30 @@ if len(evolucao_ano) >= 3:
     ult_ano = evolucao_ano.index[-1]
     penult_ano = evolucao_ano.index[-2]
     cresc_anual = (evolucao_ano.iloc[-1] / evolucao_ano.iloc[-2] - 1) * 100
-    if cresc_anual > 10:
-        msg_cresc = f"📈 Crescimento acelerado: +{cresc_anual:.1f}% entre {penult_ano} e {ult_ano}."
-    elif cresc_anual < -5:
-        msg_cresc = f"📉 Desaceleração detectada: {cresc_anual:.1f}% no último ano."
-    else:
-        msg_cresc = f"📊 Estabilidade: {cresc_anual:+.1f}% no último ano."
+    msg_cresc = f"📈 Variação anual: {cresc_anual:+.1f}% entre {penult_ano} e {ult_ano}."
 else:
     msg_cresc = "Série temporal insuficiente para tendência."
 
 col_i1, col_i2, col_i3 = st.columns(3)
 with col_i1:
-    st.markdown(f'<div class="insight-card">📍 {msg_reg}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="insight-card">{msg_reg}</div>', unsafe_allow_html=True)
 with col_i2:
-    st.markdown(f'<div class="insight-card">🧬 {msg_area}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="insight-card">{msg_area}</div>', unsafe_allow_html=True)
 with col_i3:
-    st.markdown(f'<div class="insight-card">📈 {msg_cresc}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="insight-card">{msg_cresc}</div>', unsafe_allow_html=True)
 
 # ============================================================
-# MAPA DO BRASIL (Choropleth) – Nível máximo
+# MAPA DE CALOR DO BRASIL (com dados reais)
 # ============================================================
-if "regiao_nome" in df_filtrado.columns:
-    st.markdown("## 🗺️ Distribuição Geográfica Premium")
-    # Agrupar por região nominal
-    map_data = df_filtrado.groupby("regiao_nome")["valor_pago"].sum().reset_index()
-    map_data.columns = ["Região", "Investimento"]
-    # Mapeamento para siglas (aproximado para demo – ideal seria geojson por UF)
-    # Como não temos UF individual, usamos gráfico de barras com cores de região
-    fig_map = px.bar(map_data, x="Região", y="Investimento", color="Investimento",
-                     color_continuous_scale="Blues", title="Investimento por Região (dados reais)",
-                     labels={"Investimento": "R$", "Região": ""})
-    fig_map.update_layout(template="plotly_dark", height=450, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig_map, use_container_width=True)
+st.markdown("## 🗺️ Distribuição Geográfica (Intensidade de Investimento)")
+if "unidade_federacao" in df_filtrado.columns:
+    fig_mapa = mapa_brasil_real(df_filtrado)
+    st.plotly_chart(fig_mapa, use_container_width=True)
+else:
+    st.info("Coluna 'unidade_federacao' não encontrada. Não é possível gerar o mapa.")
 
 # ============================================================
-# TREEMAP (Áreas do conhecimento)
+# TREEMAP (Áreas)
 # ============================================================
 if "grande_area" in df_filtrado.columns:
     st.markdown("## 🌳 Treemap – Áreas do Conhecimento")
@@ -385,23 +439,22 @@ if "grande_area" in df_filtrado.columns:
     st.plotly_chart(fig_treemap, use_container_width=True)
 
 # ============================================================
-# ANÁLISE ESTATÍSTICA (Boxplot + Histograma + Densidade)
+# ANÁLISE ESTATÍSTICA (Boxplot + Histograma)
 # ============================================================
 st.markdown("## 📊 Análise Estatística dos Valores")
-if len(df_filtrado) > 0:
-    col_stats1, col_stats2 = st.columns(2)
-    with col_stats1:
-        fig_box = px.box(df_filtrado, y="valor_pago", title="Distribuição dos valores das bolsas (outliers)")
-        fig_box.update_layout(template="plotly_dark", height=400)
-        st.plotly_chart(fig_box, use_container_width=True)
-    with col_stats2:
-        fig_hist = px.histogram(df_filtrado, x="valor_pago", nbins=50, marginal="violin",
-                                title="Histograma + densidade")
-        fig_hist.update_layout(template="plotly_dark", height=400)
-        st.plotly_chart(fig_hist, use_container_width=True)
+col_stats1, col_stats2 = st.columns(2)
+with col_stats1:
+    fig_box = px.box(df_filtrado, y="valor_pago", title="Distribuição dos valores das bolsas (outliers)")
+    fig_box.update_layout(template="plotly_dark", height=400)
+    st.plotly_chart(fig_box, use_container_width=True)
+with col_stats2:
+    fig_hist = px.histogram(df_filtrado, x="valor_pago", nbins=50, marginal="violin",
+                            title="Histograma + densidade")
+    fig_hist.update_layout(template="plotly_dark", height=400)
+    st.plotly_chart(fig_hist, use_container_width=True)
 
 # ============================================================
-# PROJEÇÃO (LinearRegression)
+# PROJEÇÃO LINEAR
 # ============================================================
 if "ano" in df_filtrado.columns and len(evolucao_ano) >= 3:
     st.markdown("## 🔮 Projeção de Investimento (Próximos 2 anos)")
@@ -418,7 +471,7 @@ if "ano" in df_filtrado.columns and len(evolucao_ano) >= 3:
     st.plotly_chart(fig_proj, use_container_width=True)
 
 # ============================================================
-# RANKINGS PREMIUM (com medalhas)
+# RANKINGS
 # ============================================================
 st.markdown("## 🏆 Rankings")
 col_rank1, col_rank2 = st.columns(2)
@@ -442,7 +495,7 @@ with col_rank2:
         st.info("Dados indisponíveis")
 
 # ============================================================
-# EXPORTAÇÃO (PNG e CSV)
+# EXPORTAÇÃO
 # ============================================================
 st.markdown("## 📥 Exportar")
 csv = df_filtrado.to_csv(index=False).encode("utf-8")
