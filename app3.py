@@ -3,483 +3,836 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from io import BytesIO
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 from datetime import datetime
+from io import BytesIO
 
-# ============================================================
-# CONFIGURAÇÃO
-# ============================================================
+# =========================================================
+# CONFIG
+# =========================================================
 st.set_page_config(
-    page_title="CNPq Analytics",
+    page_title="CNPq Analytics PRO",
     page_icon="🔬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ============================================================
-# CORES INSTITUCIONAIS
-# ============================================================
-COR_PRIMARIA = "#003087"
-COR_SECUNDARIA = "#008000"
-COR_DESTAQUE = "#FFCC00"
-COR_FUNDO = "#F5F7FA"
-COR_TEXTO = "#1A2B4C"
+# =========================================================
+# CORES
+# =========================================================
+PRIMARY = "#0F172A"
+SECONDARY = "#1E293B"
+ACCENT = "#2563EB"
+SUCCESS = "#10B981"
+WARNING = "#F59E0B"
+DANGER = "#EF4444"
+LIGHT = "#F8FAFC"
 
-# ============================================================
-# CSS SIMPLIFICADO (SEM ERROS)
-# ============================================================
+# =========================================================
+# CSS MODERNO
+# =========================================================
 st.markdown("""
 <style>
-.stApp { background: #F5F7FA !important; }
-.block-container { padding: 2rem 2rem !important; max-width: 1400px !important; }
 
-/* Header */
-.page-header {
-    background: linear-gradient(135deg, #003087, #008000);
-    padding: 1.5rem 2rem;
-    border-radius: 16px;
-    margin-bottom: 28px;
-}
-.page-header h1 {
-    font-size: 28px !important;
-    font-weight: 700 !important;
-    color: white !important;
-    margin: 0 0 8px 0 !important;
-}
-.page-header p {
-    color: rgba(255,255,255,0.9);
-    font-size: 14px;
-    margin: 0;
-}
-.update-badge {
-    background: #FFCC00;
-    color: #003087;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    display: inline-block;
-    margin-top: 12px;
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
 }
 
-/* Cards */
-.stat-card {
+.stApp {
+    background-color: #F1F5F9;
+}
+
+/* HEADER */
+
+.main-header {
+    background: linear-gradient(135deg,#0F172A,#1E293B);
+    padding: 2rem;
+    border-radius: 24px;
+    margin-bottom: 2rem;
+    color: white;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.main-header h1 {
+    font-size: 40px;
+    margin-bottom: 0;
+}
+
+.main-header p {
+    color: rgba(255,255,255,0.8);
+    font-size: 16px;
+}
+
+/* KPI */
+
+.kpi-card {
     background: white;
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    border: 1px solid #E8ECF0;
+    padding: 24px;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    border: 1px solid #E2E8F0;
+    transition: 0.3s;
 }
-.stat-number {
-    font-size: 28px;
-    font-weight: 700;
-    color: #003087;
+
+.kpi-card:hover {
+    transform: translateY(-4px);
 }
-.stat-label {
-    font-size: 13px;
-    color: #6B7A8F;
+
+.kpi-title {
+    font-size: 14px;
+    color: #64748B;
     margin-top: 8px;
 }
 
-/* Insight */
-.insight-card {
-    background: #E8F4FD;
-    border-left: 4px solid #FFCC00;
-    padding: 16px 20px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-}
-.insight-title {
-    font-size: 13px;
+.kpi-value {
+    font-size: 34px;
     font-weight: 700;
-    color: #003087;
-    margin-bottom: 8px;
+    color: #0F172A;
 }
 
-/* Tabs */
-.stTabs [data-baseweb="tab-list"] { gap: 8px; }
-.stTabs [data-baseweb="tab"] {
+.kpi-delta {
+    font-size: 13px;
+    color: #10B981;
+}
+
+/* INSIGHTS */
+
+.insight-box {
     background: white;
-    border-radius: 12px;
-    padding: 8px 24px;
-    color: #6B7A8F;
-    border: 1px solid #E8ECF0;
-}
-.stTabs [aria-selected="true"] {
-    background: #003087;
-    color: white;
-    border: none;
+    border-left: 6px solid #2563EB;
+    padding: 20px;
+    border-radius: 16px;
+    margin-top: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-/* Botões */
-.stDownloadButton button {
-    background: #003087 !important;
+/* SIDEBAR */
+
+section[data-testid="stSidebar"] {
+    background: #0F172A;
+}
+
+section[data-testid="stSidebar"] * {
     color: white !important;
-    border-radius: 30px !important;
-    padding: 10px 24px !important;
-    font-weight: 600 !important;
-    border: none !important;
 }
 
-/* Footer */
-.footer {
-    text-align: center;
-    padding: 30px 0 20px;
-    margin-top: 40px;
-    border-top: 1px solid #E8ECF0;
-    color: #6B7A8F;
-    font-size: 12px;
+/* DATAFRAME */
+
+[data-testid="stDataFrame"] {
+    border-radius: 14px;
+    overflow: hidden;
 }
+
+/* TABS */
+
+.stTabs [data-baseweb="tab"] {
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 10px 20px;
+}
+
+/* FOOTER */
+
+.footer {
+    text-align:center;
+    color:#64748B;
+    margin-top:40px;
+    padding:20px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================================
+# =========================================================
 # HEADER
-# ============================================================
-st.markdown("""
-<div class="page-header">
-    <h1>🔬 CNPq Analytics</h1>
-    <p>Análise estratégica de investimentos em pesquisa e desenvolvimento no Brasil</p>
-    <div class="update-badge">📅 Última atualização: 27/03/2026</div>
+# =========================================================
+st.markdown(f"""
+<div class="main-header">
+    <h1>🔬 CNPq Analytics PRO</h1>
+    <p>
+        Plataforma avançada de análise de investimentos científicos no Brasil
+    </p>
 </div>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# SIDEBAR
-# ============================================================
-with st.sidebar:
-    st.markdown("### 🎯 Filtros")
-    uploaded_file = st.file_uploader("📄 Upload do CSV", type=["csv"])
-    
-    st.markdown("---")
-    st.markdown("### 📊 Dataset")
-    st.markdown("""
-    - **213.735** registros
-    - **26** colunas
-    - **R$ 1B+** investimento
-    - **2014-2027** período
-    """)
-    
-    st.markdown("---")
-    st.markdown("📥 **Baixar CSV original:**")
-    st.markdown("[Google Drive](https://drive.google.com/uc?export=download&id=1UXxWqTc6u8_RID_5BbpUI7JLwmgT01ub)")
-
-# ============================================================
+# =========================================================
 # FUNÇÕES
-# ============================================================
-def fmt_brl(valor):
-    if pd.isna(valor) or valor == 0:
+# =========================================================
+
+def fmt_money(v):
+    if pd.isna(v):
         return "R$ 0"
-    if abs(valor) >= 1_000_000_000:
-        return f"R$ {valor/1_000_000_000:.1f}B".replace(".", ",")
-    if abs(valor) >= 1_000_000:
-        return f"R$ {valor/1_000_000:.1f}M".replace(".", ",")
-    return f"R$ {valor:,.0f}".replace(",", ".")
 
-def fmt_num(n):
-    if pd.isna(n):
-        return "0"
-    return f"{int(n):,}".replace(",", ".")
+    if v >= 1_000_000_000:
+        return f"R$ {v/1_000_000_000:.2f}B".replace(".", ",")
 
-@st.cache_data
-def carregar_dados(uploaded_file):
-    for encoding in ['latin1', 'utf-8', 'cp1252']:
+    if v >= 1_000_000:
+        return f"R$ {v/1_000_000:.2f}M".replace(".", ",")
+
+    return f"R$ {v:,.0f}".replace(",", ".")
+
+
+def fmt_num(v):
+    return f"{int(v):,}".replace(",", ".")
+
+
+@st.cache_data(ttl=3600)
+def load_data(file):
+
+    encodings = ['utf-8', 'latin1', 'cp1252']
+
+    for enc in encodings:
+
         try:
-            uploaded_file.seek(0)
-            df = pd.read_csv(uploaded_file, delimiter=';', encoding=encoding, low_memory=False)
-            df.columns = df.columns.str.lower().str.strip()
-            
+
+            file.seek(0)
+
+            df = pd.read_csv(
+                file,
+                sep=';',
+                encoding=enc,
+                low_memory=False
+            )
+
+            df.columns = (
+                df.columns
+                .str.lower()
+                .str.strip()
+            )
+
+            # valor pago
             if 'valor_pago' in df.columns:
+
+                df['valor_pago'] = (
+                    df['valor_pago']
+                    .astype(str)
+                    .str.replace('.', '', regex=False)
+                    .str.replace(',', '.', regex=False)
+                )
+
                 df['valor_pago'] = pd.to_numeric(
-                    df['valor_pago'].astype(str).str.replace(',', '.', regex=False).str.extract(r'(\d+\.?\d*)', expand=False),
+                    df['valor_pago'],
                     errors='coerce'
                 )
-            
-            df = df.dropna(subset=['valor_pago'])
-            df = df[df['valor_pago'] > 0]
-            
+
+            # datas
+            datas = [
+                'data_inicio_processo',
+                'data_termino_processo'
+            ]
+
+            for d in datas:
+
+                if d in df.columns:
+                    df[d] = pd.to_datetime(
+                        df[d],
+                        errors='coerce',
+                        dayfirst=True
+                    )
+
+            # ano
             if 'data_inicio_processo' in df.columns:
-                df['data_inicio_processo'] = pd.to_datetime(df['data_inicio_processo'], errors='coerce', dayfirst=True)
                 df['ano'] = df['data_inicio_processo'].dt.year
-            
-            regioes_map = {'SE': 'Sudeste', 'SU': 'Sul', 'NE': 'Nordeste', 'CO': 'Centro-Oeste', 'N': 'Norte', 'NO': 'Norte', 'EX': 'Exterior', 'NI': 'Não Informado'}
+
+            # status bolsa
+            if 'data_termino_processo' in df.columns:
+
+                hoje = pd.Timestamp.today()
+
+                df['status_bolsa'] = np.where(
+                    df['data_termino_processo'] >= hoje,
+                    'Ativa',
+                    'Encerrada'
+                )
+
+            # regiões
+            mapa = {
+                'SE': 'Sudeste',
+                'SU': 'Sul',
+                'NE': 'Nordeste',
+                'CO': 'Centro-Oeste',
+                'N': 'Norte',
+                'NO': 'Norte'
+            }
+
             if 'regiao' in df.columns:
-                df['regiao_nome'] = df['regiao'].map(regioes_map).fillna(df['regiao'])
-            
+                df['regiao_nome'] = (
+                    df['regiao']
+                    .map(mapa)
+                    .fillna(df['regiao'])
+                )
+
             return df
+
         except:
-            continue
+            pass
+
     return None
 
-# ============================================================
+
+# =========================================================
+# SIDEBAR
+# =========================================================
+
+with st.sidebar:
+
+    st.title("⚙️ Controle")
+
+    uploaded = st.file_uploader(
+        "Upload CSV",
+        type=["csv"]
+    )
+
+    st.markdown("---")
+
+    st.markdown("""
+    ### 📊 Sobre
+
+    Dashboard executivo para análise de:
+    
+    - bolsas CNPq
+    - investimentos
+    - regiões
+    - áreas científicas
+    - instituições
+    - tendências
+    """)
+
+# =========================================================
 # MAIN
-# ============================================================
-if uploaded_file is not None:
-    with st.spinner("🔄 Processando 110MB de dados... Isso leva ~30 segundos"):
-        df = carregar_dados(uploaded_file)
-    
-    if df is not None and len(df) > 0:
-        st.success(f"✅ {len(df):,} registros carregados com sucesso!")
-        
+# =========================================================
+
+if uploaded:
+
+    with st.spinner("Processando dataset..."):
+
+        df = load_data(uploaded)
+
+    if df is not None:
+
+        # =====================================================
         # FILTROS
-        st.sidebar.markdown("---")
-        st.sidebar.markdown("### 🔍 Filtros Avançados")
-        
-        df_filtrado = df.copy()
-        
-        if 'regiao_nome' in df.columns:
-            regioes = sorted(df['regiao_nome'].dropna().unique())
-            reg_sel = st.sidebar.multiselect("📍 Região", regioes, default=regioes)
-            if reg_sel:
-                df_filtrado = df_filtrado[df_filtrado['regiao_nome'].isin(reg_sel)]
-        
-        if 'ano' in df.columns:
-            anos = sorted(df['ano'].dropna().unique())
-            if len(anos) > 1:
-                ano_min, ano_max = int(min(anos)), int(max(anos))
-                ano_sel = st.sidebar.slider("📅 Período", ano_min, ano_max, (ano_min, ano_max))
-                df_filtrado = df_filtrado[(df_filtrado['ano'] >= ano_sel[0]) & (df_filtrado['ano'] <= ano_sel[1])]
-        
-        if 'grande_area' in df.columns:
-            areas = sorted(df['grande_area'].dropna().unique())
-            areas_sel = st.sidebar.multiselect("🧬 Grande Área", areas, default=areas[:6] if len(areas) > 6 else areas)
-            if areas_sel:
-                df_filtrado = df_filtrado[df_filtrado['grande_area'].isin(areas_sel)]
-        
-        # KPIs
-        total_val = df_filtrado['valor_pago'].sum()
-        media_val = df_filtrado['valor_pago'].mean()
-        n_pesq = df_filtrado['beneficiario'].nunique() if 'beneficiario' in df_filtrado.columns else 0
-        n_inst = df_filtrado['instituicao_destino'].nunique() if 'instituicao_destino' in df_filtrado.columns else 0
-        n_bolsas = df_filtrado.shape[0]
-        
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("💰 INVESTIMENTO TOTAL", fmt_brl(total_val))
-        col2.metric("👥 PESQUISADORES", fmt_num(n_pesq))
-        col3.metric("🏛️ INSTITUIÇÕES", fmt_num(n_inst))
-        col4.metric("🎫 TOTAL DE BOLSAS", fmt_num(n_bolsas))
-        
+        # =====================================================
+
+        df_f = df.copy()
+
+        with st.sidebar:
+
+            st.markdown("---")
+            st.subheader("🔍 Filtros")
+
+            # ano
+            if 'ano' in df.columns:
+
+                anos = sorted(
+                    df['ano']
+                    .dropna()
+                    .unique()
+                )
+
+                if len(anos) > 1:
+
+                    ano_sel = st.slider(
+                        "Período",
+                        int(min(anos)),
+                        int(max(anos)),
+                        (
+                            int(min(anos)),
+                            int(max(anos))
+                        )
+                    )
+
+                    df_f = df_f[
+                        (df_f['ano'] >= ano_sel[0]) &
+                        (df_f['ano'] <= ano_sel[1])
+                    ]
+
+            # região
+            if 'regiao_nome' in df.columns:
+
+                regs = sorted(
+                    df['regiao_nome']
+                    .dropna()
+                    .unique()
+                )
+
+                reg_sel = st.multiselect(
+                    "Região",
+                    regs,
+                    default=regs
+                )
+
+                df_f = df_f[
+                    df_f['regiao_nome']
+                    .isin(reg_sel)
+                ]
+
+            # área
+            if 'grande_area' in df.columns:
+
+                areas = sorted(
+                    df['grande_area']
+                    .dropna()
+                    .unique()
+                )
+
+                area_sel = st.multiselect(
+                    "Grande Área",
+                    areas,
+                    default=areas[:5]
+                )
+
+                df_f = df_f[
+                    df_f['grande_area']
+                    .isin(area_sel)
+                ]
+
+        # =====================================================
+        # KPIS
+        # =====================================================
+
+        total = df_f['valor_pago'].sum()
+
+        media = df_f['valor_pago'].mean()
+
+        bolsas = len(df_f)
+
+        pesquisadores = (
+            df_f['beneficiario'].nunique()
+            if 'beneficiario' in df_f.columns else 0
+        )
+
+        instituicoes = (
+            df_f['instituicao_destino'].nunique()
+            if 'instituicao_destino' in df_f.columns else 0
+        )
+
+        c1, c2, c3, c4 = st.columns(4)
+
+        with c1:
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-value'>{fmt_money(total)}</div>
+                <div class='kpi-title'>💰 Investimento Total</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with c2:
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-value'>{fmt_num(bolsas)}</div>
+                <div class='kpi-title'>🎓 Bolsas</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with c3:
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-value'>{fmt_num(pesquisadores)}</div>
+                <div class='kpi-title'>👨‍🔬 Pesquisadores</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with c4:
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-value'>{fmt_num(instituicoes)}</div>
+                <div class='kpi-title'>🏛️ Instituições</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # =====================================================
         # INSIGHTS
+        # =====================================================
+
         insights = []
-        if 'regiao_nome' in df_filtrado.columns:
-            top_reg = df_filtrado.groupby('regiao_nome')['valor_pago'].sum().idxmax()
-            insights.append(f"📍 <strong>{top_reg}</strong> é a região com maior investimento")
-        
-        if 'grande_area' in df_filtrado.columns:
-            top_area = df_filtrado.groupby('grande_area')['valor_pago'].sum().idxmax()
-            insights.append(f"🧬 <strong>{top_area}</strong> lidera o investimento entre as áreas")
-        
-        if 'ano' in df_filtrado.columns:
-            anos_disp = sorted(df_filtrado['ano'].dropna().unique())
-            if len(anos_disp) >= 2:
-                inv_ano = df_filtrado.groupby('ano')['valor_pago'].sum()
-                var = ((inv_ano.iloc[-1] - inv_ano.iloc[-2]) / inv_ano.iloc[-2] * 100)
-                sinal = "📈 crescimento" if var > 0 else "📉 queda"
-                insights.append(f"📊 {sinal} de {abs(var):.1f}% no último ano")
-        
+
+        if 'regiao_nome' in df_f.columns:
+
+            top_reg = (
+                df_f.groupby('regiao_nome')['valor_pago']
+                .sum()
+                .idxmax()
+            )
+
+            insights.append(
+                f"📍 Região líder em investimento: <b>{top_reg}</b>"
+            )
+
+        if 'grande_area' in df_f.columns:
+
+            top_area = (
+                df_f.groupby('grande_area')['valor_pago']
+                .sum()
+                .idxmax()
+            )
+
+            insights.append(
+                f"🧬 Área mais financiada: <b>{top_area}</b>"
+            )
+
+        if 'instituicao_destino' in df_f.columns:
+
+            top_inst = (
+                df_f.groupby('instituicao_destino')['valor_pago']
+                .sum()
+                .idxmax()
+            )
+
+            insights.append(
+                f"🏛️ Instituição dominante: <b>{top_inst}</b>"
+            )
+
         st.markdown(f"""
-        <div class="insight-card">
-            <div class="insight-title">🔍 INSIGHTS AUTOMÁTICOS</div>
-            <div style="font-size: 14px;">{" • ".join(insights)}</div>
+        <div class='insight-box'>
+            {'<br>'.join(insights)}
         </div>
         """, unsafe_allow_html=True)
-        
+
+        # =====================================================
         # TABS
-        tab1, tab2, tab3, tab4 = st.tabs(["📊 Por Área", "🗺️ Por Região", "📈 Evolução", "🏆 Rankings"])
-        
-        # ==================== TAB 1: POR ÁREA ====================
+        # =====================================================
+
+        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            "📊 Visão Geral",
+            "🗺️ Regiões",
+            "🧬 Áreas",
+            "🏛️ Instituições",
+            "📈 Tendências"
+        ])
+
+        # =====================================================
+        # TAB 1
+        # =====================================================
+
         with tab1:
-            if 'grande_area' in df_filtrado.columns:
-                area_data = df_filtrado.groupby('grande_area')['valor_pago'].sum().sort_values(ascending=False).head(10).reset_index()
-                area_data.columns = ['Área', 'Valor']
-                
-                if len(area_data) > 0:
-                    # Usando px.bar (mais estável que go.Figure)
-                    fig1 = px.bar(area_data, x='Valor', y='Área', orientation='h',
-                                 color='Valor', color_continuous_scale='Blues',
-                                 text='Valor', title="Top 10 Áreas do Conhecimento")
-                    fig1.update_layout(height=500, margin=dict(l=20, r=20, t=50, b=20))
-                    fig1.update_traces(texttemplate='R$ %{x:,.0f}', textposition='outside')
-                    st.plotly_chart(fig1, use_container_width=True)
-                    
-                    # Tabela resumo
-                    area_show = area_data.copy()
-                    area_show['Valor'] = area_show['Valor'].apply(fmt_brl)
-                    st.dataframe(area_show[['Área', 'Valor']], use_container_width=True, hide_index=True)
-                else:
-                    st.info("Nenhum dado disponível")
-            else:
-                st.info("Coluna 'grande_area' não encontrada")
-        
-        # ==================== TAB 2: POR REGIÃO ====================
-        with tab2:
-            if 'regiao_nome' in df_filtrado.columns:
-                reg_data = df_filtrado.groupby('regiao_nome')['valor_pago'].sum().reset_index()
-                reg_data.columns = ['Região', 'Valor']
-                
-                if len(reg_data) > 0:
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        fig2 = px.bar(reg_data, x='Região', y='Valor', color='Valor',
-                                     color_continuous_scale='Blues', text='Valor',
-                                     title="Investimento por Região")
-                        fig2.update_traces(texttemplate='R$ %{y:,.0f}', textposition='outside')
-                        st.plotly_chart(fig2, use_container_width=True)
-                        
-                        # Ticket médio
-                        ticket_reg = df_filtrado.groupby('regiao_nome')['valor_pago'].mean().sort_values(ascending=False).reset_index()
-                        ticket_reg.columns = ['Região', 'Ticket Médio']
-                        ticket_reg['Ticket Médio'] = ticket_reg['Ticket Médio'].apply(fmt_brl)
-                        st.dataframe(ticket_reg, use_container_width=True, hide_index=True)
-                    
-                    with col2:
-                        fig3 = px.pie(reg_data, values='Valor', names='Região', hole=0.35,
-                                     title="Distribuição por Região",
-                                     color_discrete_sequence=['#003087', '#008000', '#FFCC00', '#6B7A8F', '#7C3AED'])
-                        fig3.update_traces(textposition='inside', textinfo='percent+label')
-                        st.plotly_chart(fig3, use_container_width=True)
-                        
-                        if 'Sudeste' in reg_data['Região'].values and 'Norte' in reg_data['Região'].values:
-                            sudeste_val = reg_data[reg_data['Região'] == 'Sudeste']['Valor'].values[0]
-                            norte_val = reg_data[reg_data['Região'] == 'Norte']['Valor'].values[0]
-                            diferenca = sudeste_val / norte_val if norte_val > 0 else 0
-                            st.info(f"⚖️ **Sudeste** recebe **{diferenca:.1f}x mais** investimento que **Norte**")
-                else:
-                    st.info("Nenhum dado disponível")
-            else:
-                st.info("Coluna 'regiao_nome' não encontrada")
-        
-        # ==================== TAB 3: EVOLUÇÃO ====================
-        with tab3:
-            if 'ano' in df_filtrado.columns:
-                inv_ano = df_filtrado.groupby('ano')['valor_pago'].sum().reset_index()
-                inv_ano = inv_ano.dropna()
-                
-                if len(inv_ano) > 1:
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        fig4 = px.area(inv_ano, x='ano', y='valor_pago', markers=True,
-                                      title="Evolução do Investimento")
-                        fig4.update_traces(line=dict(width=2, color='#003087'), fillcolor='rgba(0,48,135,0.1)')
-                        st.plotly_chart(fig4, use_container_width=True)
-                    
-                    with col2:
-                        fig5 = px.bar(inv_ano, x='ano', y='valor_pago', color='valor_pago',
-                                     color_continuous_scale='Greens', title="Investimento por Ano")
-                        st.plotly_chart(fig5, use_container_width=True)
-                    
-                    var = ((inv_ano['valor_pago'].iloc[-1] - inv_ano['valor_pago'].iloc[-2]) / inv_ano['valor_pago'].iloc[-2] * 100)
-                    st.metric("📈 Variação Último Ano", f"{var:+.1f}%", delta_color="normal" if var > 0 else "inverse")
-                else:
-                    st.info("Dados insuficientes para análise temporal")
-            else:
-                st.info("Coluna 'ano' não encontrada")
-        
-        # ==================== TAB 4: RANKINGS ====================
-        with tab4:
+
             col1, col2 = st.columns(2)
-            
+
             with col1:
-                st.markdown("#### 🏆 Top 10 Pesquisadores")
-                if 'beneficiario' in df_filtrado.columns:
-                    top_pesq = df_filtrado.groupby('beneficiario')['valor_pago'].sum().sort_values(ascending=False).head(10).reset_index()
-                    top_pesq.columns = ['Pesquisador', 'Total']
-                    top_pesq['Total'] = top_pesq['Total'].apply(fmt_brl)
-                    st.dataframe(top_pesq, use_container_width=True, hide_index=True)
-                else:
-                    st.info("Dados não disponíveis")
-            
+
+                if 'grande_area' in df_f.columns:
+
+                    area_data = (
+                        df_f.groupby('grande_area')['valor_pago']
+                        .sum()
+                        .sort_values(ascending=False)
+                        .head(10)
+                        .reset_index()
+                    )
+
+                    fig = px.bar(
+                        area_data,
+                        x='valor_pago',
+                        y='grande_area',
+                        orientation='h',
+                        color='valor_pago',
+                        color_continuous_scale='Blues',
+                        title='Top Áreas Científicas'
+                    )
+
+                    fig.update_layout(
+                        height=500,
+                        paper_bgcolor='white'
+                    )
+
+                    st.plotly_chart(
+                        fig,
+                        use_container_width=True
+                    )
+
             with col2:
-                st.markdown("#### 🏛️ Top 10 Instituições")
-                if 'instituicao_destino' in df_filtrado.columns:
-                    top_inst = df_filtrado.groupby('instituicao_destino')['valor_pago'].sum().sort_values(ascending=False).head(10).reset_index()
-                    top_inst.columns = ['Instituição', 'Total']
-                    top_inst['Total'] = top_inst['Total'].apply(fmt_brl)
-                    st.dataframe(top_inst, use_container_width=True, hide_index=True)
-                else:
-                    st.info("Dados não disponíveis")
-            
-            st.markdown("#### 🎓 Top 10 Modalidades")
-            if 'modalidade' in df_filtrado.columns:
-                top_mod = df_filtrado['modalidade'].value_counts().head(10).reset_index()
-                top_mod.columns = ['Modalidade', 'Quantidade']
-                st.dataframe(top_mod, use_container_width=True, hide_index=True)
-            else:
-                st.info("Dados não disponíveis")
-        
-        # ==================== EXPORTAÇÃO ====================
+
+                if 'regiao_nome' in df_f.columns:
+
+                    reg = (
+                        df_f.groupby('regiao_nome')['valor_pago']
+                        .sum()
+                        .reset_index()
+                    )
+
+                    fig2 = px.pie(
+                        reg,
+                        values='valor_pago',
+                        names='regiao_nome',
+                        hole=0.5
+                    )
+
+                    fig2.update_layout(
+                        height=500
+                    )
+
+                    st.plotly_chart(
+                        fig2,
+                        use_container_width=True
+                    )
+
+        # =====================================================
+        # TAB 2
+        # =====================================================
+
+        with tab2:
+
+            if 'sigla_uf_destino' in df_f.columns:
+
+                uf_data = (
+                    df_f.groupby('sigla_uf_destino')['valor_pago']
+                    .sum()
+                    .reset_index()
+                )
+
+                fig = px.bar(
+                    uf_data.sort_values(
+                        'valor_pago',
+                        ascending=False
+                    ).head(15),
+                    x='sigla_uf_destino',
+                    y='valor_pago',
+                    color='valor_pago',
+                    color_continuous_scale='Viridis',
+                    title='Top Estados'
+                )
+
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True
+                )
+
+            if 'cidade_destino' in df_f.columns:
+
+                cidade = (
+                    df_f.groupby('cidade_destino')['valor_pago']
+                    .sum()
+                    .sort_values(ascending=False)
+                    .head(15)
+                    .reset_index()
+                )
+
+                fig2 = px.bar(
+                    cidade,
+                    x='valor_pago',
+                    y='cidade_destino',
+                    orientation='h',
+                    color='valor_pago',
+                    color_continuous_scale='Tealgrn',
+                    title='Top Cidades Científicas'
+                )
+
+                st.plotly_chart(
+                    fig2,
+                    use_container_width=True
+                )
+
+        # =====================================================
+        # TAB 3
+        # =====================================================
+
+        with tab3:
+
+            if (
+                'grande_area' in df_f.columns and
+                'regiao_nome' in df_f.columns
+            ):
+
+                pivot = pd.pivot_table(
+                    df_f,
+                    values='valor_pago',
+                    index='grande_area',
+                    columns='regiao_nome',
+                    aggfunc='sum'
+                )
+
+                fig = px.imshow(
+                    pivot,
+                    text_auto=True,
+                    aspect='auto',
+                    color_continuous_scale='Blues',
+                    title='Heatmap Área x Região'
+                )
+
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True
+                )
+
+        # =====================================================
+        # TAB 4
+        # =====================================================
+
+        with tab4:
+
+            c1, c2 = st.columns(2)
+
+            with c1:
+
+                if 'instituicao_destino' in df_f.columns:
+
+                    top_inst = (
+                        df_f.groupby('instituicao_destino')['valor_pago']
+                        .sum()
+                        .sort_values(ascending=False)
+                        .head(15)
+                        .reset_index()
+                    )
+
+                    st.dataframe(
+                        top_inst,
+                        use_container_width=True
+                    )
+
+            with c2:
+
+                if 'beneficiario' in df_f.columns:
+
+                    top_pesq = (
+                        df_f.groupby('beneficiario')['valor_pago']
+                        .sum()
+                        .sort_values(ascending=False)
+                        .head(15)
+                        .reset_index()
+                    )
+
+                    st.dataframe(
+                        top_pesq,
+                        use_container_width=True
+                    )
+
+        # =====================================================
+        # TAB 5
+        # =====================================================
+
+        with tab5:
+
+            if 'ano' in df_f.columns:
+
+                ano = (
+                    df_f.groupby('ano')['valor_pago']
+                    .sum()
+                    .reset_index()
+                )
+
+                fig = px.line(
+                    ano,
+                    x='ano',
+                    y='valor_pago',
+                    markers=True,
+                    title='Evolução dos Investimentos'
+                )
+
+                fig.update_traces(
+                    line=dict(width=4)
+                )
+
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True
+                )
+
+            # status bolsa
+
+            if 'status_bolsa' in df_f.columns:
+
+                status = (
+                    df_f['status_bolsa']
+                    .value_counts()
+                    .reset_index()
+                )
+
+                fig2 = px.pie(
+                    status,
+                    values='count',
+                    names='status_bolsa',
+                    hole=0.4,
+                    title='Status das Bolsas'
+                )
+
+                st.plotly_chart(
+                    fig2,
+                    use_container_width=True
+                )
+
+        # =====================================================
+        # WORDCLOUD
+        # =====================================================
+
+        if 'titulo_projeto' in df_f.columns:
+
+            st.markdown("## ☁️ Tendências Científicas")
+
+            textos = " ".join(
+                df_f['titulo_projeto']
+                .dropna()
+                .astype(str)
+                .tolist()
+            )
+
+            if len(textos) > 10:
+
+                wc = WordCloud(
+                    width=1200,
+                    height=500,
+                    background_color='white'
+                ).generate(textos)
+
+                fig, ax = plt.subplots(
+                    figsize=(15,6)
+                )
+
+                ax.imshow(wc)
+
+                ax.axis('off')
+
+                st.pyplot(fig)
+
+        # =====================================================
+        # EXPORTAÇÃO
+        # =====================================================
+
         st.markdown("---")
-        st.markdown("### 📥 Exportar Dados")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            csv_data = df_filtrado.to_csv(index=False, sep=';')
-            st.download_button("📄 Exportar CSV", csv_data, f"cnpq_dados_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
-        
-        with col2:
-            relatorio = f"""RELATÓRIO CNPq - {datetime.now().strftime('%d/%m/%Y %H:%M')}
-Investimento: {fmt_brl(total_val)}
-Pesquisadores: {fmt_num(n_pesq)}
-Instituições: {fmt_num(n_inst)}
-Bolsas: {fmt_num(n_bolsas)}"""
-            st.download_button("📝 Exportar Relatório", relatorio, f"relatorio_{datetime.now().strftime('%Y%m%d')}.txt", "text/plain")
-        
-        with st.expander("🗂️ Visualizar Dados Detalhados"):
-            cols_show = [c for c in df_filtrado.columns if c not in ['ano']][:10]
-            st.dataframe(df_filtrado[cols_show].head(500), use_container_width=True, height=400)
-        
+
+        st.subheader("📥 Exportar")
+
+        csv = df_f.to_csv(
+            index=False,
+            sep=';'
+        )
+
+        st.download_button(
+            "📄 Exportar CSV",
+            csv,
+            file_name=f"cnpq_{datetime.now().strftime('%Y%m%d')}.csv",
+            mime='text/csv'
+        )
+
+        # =====================================================
+        # DADOS
+        # =====================================================
+
+        with st.expander("🗂️ Visualizar Dados"):
+
+            st.dataframe(
+                df_f.head(1000),
+                use_container_width=True
+            )
+
+        # =====================================================
+        # FOOTER
+        # =====================================================
+
         st.markdown(f"""
-        <div class="footer">
-            🔬 CNPq Analytics · Fonte: CNPq/Governo Federal<br>
-            📅 {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}
+        <div class='footer'>
+            🔬 CNPq Analytics PRO <br>
+            Atualizado em {datetime.now().strftime('%d/%m/%Y %H:%M')}
         </div>
         """, unsafe_allow_html=True)
-    
+
     else:
-        st.error("❌ Erro ao carregar o arquivo. Verifique o formato CSV.")
+
+        st.error("Erro ao carregar CSV")
 
 else:
-    # ==================== TELA INICIAL ====================
-    st.info("👈 **Faça upload do arquivo CSV no menu lateral para começar**")
-    
-    st.markdown("""
-    <div style="background: white; border-radius: 16px; padding: 24px; margin-bottom: 24px; border: 1px solid #E8ECF0;">
-        <h3 style="color: #1A2B4C; margin-bottom: 12px;">📋 Sobre o Dashboard</h3>
-        <p style="color: #6B7A8F;">Este dashboard analisa <strong>213.735 bolsas de pesquisa</strong> do CNPq, totalizando mais de <strong>R$ 1 bilhão</strong> em investimentos (2014-2027).</p>
-        <p style="color: #6B7A8F;">✅ <strong>Fonte oficial:</strong> Portal Brasileiro de Dados Abertos (CGU/MDS)</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Cards alinhados
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown('<div class="stat-card"><div class="stat-number">213.735</div><div class="stat-label">Bolsas</div></div>', unsafe_allow_html=True)
-    with col2:
-        st.markdown('<div class="stat-card"><div class="stat-number">R$ 1,02B</div><div class="stat-label">Investimento</div></div>', unsafe_allow_html=True)
-    with col3:
-        st.markdown('<div class="stat-card"><div class="stat-number">88.079</div><div class="stat-label">Pesquisadores</div></div>', unsafe_allow_html=True)
-    with col4:
-        st.markdown('<div class="stat-card"><div class="stat-number">4.281</div><div class="stat-label">Instituições</div></div>', unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div style="background: #E8F4FD; border-radius: 12px; padding: 20px; margin-top: 20px;">
-        <h4 style="color: #1A2B4C; margin-bottom: 12px;">🚀 Como usar</h4>
-        <ol style="color: #6B7A8F; margin: 0; padding-left: 20px;">
-            <li>Baixe o CSV original usando o link no menu lateral</li>
-            <li>Clique em "Upload do CSV" e selecione o arquivo</li>
-            <li>Explore filtros, gráficos e rankings</li>
-            <li>Exporte os dados filtrados</li>
-        </ol>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="footer">
-        🔬 CNPq Analytics · Dashboard para portfólio<br>
-        Fonte: Portal Brasileiro de Dados Abertos (CGU/MDS)
-    </div>
-    """, unsafe_allow_html=True)
+
+    st.info("👈 Faça upload do dataset CSV para começar")
