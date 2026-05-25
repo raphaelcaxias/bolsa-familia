@@ -102,28 +102,36 @@ def fmt_num(valor):
     return f"{int(valor):,}".replace(",", ".")
 
 # ============================================================
-# CARREGAMENTO DE DADOS (com múltiplos encodings)
+# CARREGAMENTO DE DADOS COM UPLOAD
 # ============================================================
-@st.cache_data(ttl=3600)
-def carregar_dados():
+@st.cache_data
+def carregar_dados(uploaded_file):
+    """Carrega CSV com detecção automática de encoding e separador"""
     for enc in ["utf-8", "latin1", "cp1252", "ISO-8859-1"]:
         try:
-            df = pd.read_csv("bolsa_familia.csv", sep=";", encoding=enc, low_memory=False)
+            uploaded_file.seek(0)
+            df = pd.read_csv(uploaded_file, sep=";", encoding=enc, low_memory=False)
             df.columns = df.columns.str.lower().str.strip()
+            
             # Converte valor_pago
             if "valor_pago" in df.columns:
                 df["valor_pago"] = pd.to_numeric(
-                    df["valor_pago"].astype(str).str.replace(",", ".", regex=False)
+                    df["valor_pago"].astype(str)
+                    .str.replace(",", ".", regex=False)
                     .str.extract(r"(\d+\.?\d*)", expand=False),
                     errors="coerce"
                 )
             # Remove linhas sem valor
             df = df.dropna(subset=["valor_pago"])
             df = df[df["valor_pago"] > 0]
+            
             # Converte data se existir
             if "data_inicio_processo" in df.columns:
-                df["data_inicio_processo"] = pd.to_datetime(df["data_inicio_processo"], errors="coerce", dayfirst=True)
+                df["data_inicio_processo"] = pd.to_datetime(
+                    df["data_inicio_processo"], errors="coerce", dayfirst=True
+                )
                 df["ano"] = df["data_inicio_processo"].dt.year
+            
             # Mapeia regiões se coluna 'regiao' existir
             if "regiao" in df.columns:
                 regioes_map = {
@@ -132,18 +140,14 @@ def carregar_dados():
                     "EX": "Exterior", "NI": "Não Informado"
                 }
                 df["regiao_nome"] = df["regiao"].map(regioes_map).fillna(df["regiao"])
+            
             return df, enc
         except Exception:
             continue
     return None, None
 
-df, encoding = carregar_dados()
-if df is None or len(df) == 0:
-    st.error("❌ Erro ao carregar os dados. Verifique se o arquivo 'bolsa_familia.csv' está presente.")
-    st.stop()
-
 # ============================================================
-# SIDEBAR (filtros e tema)
+# SIDEBAR
 # ============================================================
 with st.sidebar:
     st.markdown("### ⚙️ Controles")
@@ -157,27 +161,43 @@ with st.sidebar:
             st.session_state.tema = "escuro"
             st.rerun()
     st.markdown("---")
-
-    # Filtros
+    
+    # Upload do arquivo
+    uploaded_file = st.file_uploader(
+        "📂 Envie o arquivo CSV (bolsa_familia.csv)",
+        type=["csv"],
+        help="Arquivo com dados de bolsas do CNPq"
+    )
+    
+    if uploaded_file is not None:
+        with st.spinner("Processando dados..."):
+            df, encoding = carregar_dados(uploaded_file)
+        if df is None:
+            st.error("❌ Erro ao ler o arquivo. Verifique o formato (separador ';', encoding latin1/utf-8).")
+            st.stop()
+        st.success(f"✅ Dados carregados: {df.shape[0]:,} registros (encoding: {encoding})")
+    else:
+        st.info("👈 Faça upload do arquivo CSV para começar a análise.")
+        st.stop()
+    
+    st.markdown("---")
+    # Filtros dinâmicos após upload
     df_filtrado = df.copy()
-
     if "ano" in df.columns:
         anos = sorted(df["ano"].dropna().unique().astype(int))
-        ano_sel = st.slider("Ano", min(anos), max(anos), (min(anos), max(anos)), step=1)
-        df_filtrado = df_filtrado[(df_filtrado["ano"] >= ano_sel[0]) & (df_filtrado["ano"] <= ano_sel[1])]
-
+        if len(anos) > 1:
+            ano_sel = st.slider("Ano", min(anos), max(anos), (min(anos), max(anos)), step=1)
+            df_filtrado = df_filtrado[(df_filtrado["ano"] >= ano_sel[0]) & (df_filtrado["ano"] <= ano_sel[1])]
     if "grande_area" in df.columns:
         areas = sorted(df["grande_area"].dropna().unique())
         areas_sel = st.multiselect("Grande Área", areas, default=areas[:6] if len(areas) > 6 else areas)
         if areas_sel:
             df_filtrado = df_filtrado[df_filtrado["grande_area"].isin(areas_sel)]
-
     if "regiao_nome" in df.columns:
         regioes = sorted(df["regiao_nome"].dropna().unique())
         reg_sel = st.multiselect("Região", regioes, default=regioes)
         if reg_sel:
             df_filtrado = df_filtrado[df_filtrado["regiao_nome"].isin(reg_sel)]
-
     if st.button("🔄 Limpar Filtros", use_container_width=True):
         st.rerun()
 
@@ -192,8 +212,8 @@ with st.container():
     with col_origem:
         st.markdown("""
         **📌 Sobre os dados**  
-        Este dashboard analisa mais de **213 mil bolsas de pesquisa** concedidas pelo CNPq entre 2014 e 2027, totalizando **mais de R$ 1 bilhão** em investimentos.  
-        Os dados foram extraídos do **Portal Brasileiro de Dados Abertos (CGU/CNPq)** e incluem informações por área do conhecimento, região, instituição e modalidade de bolsa.
+        Este dashboard analisa dados de bolsas de pesquisa concedidas pelo CNPq.  
+        Os dados foram extraídos do **Portal Brasileiro de Dados Abertos (CGU/CNPq)**.
         """)
     with col_link:
         st.markdown(f"""
@@ -221,15 +241,14 @@ with st.container():
 
     # Principais conclusões (insights automáticos)
     st.markdown("### 📌 Principais Conclusões")
-
-    if "grande_area" in df_filtrado.columns:
+    if "grande_area" in df_filtrado.columns and total_volume > 0:
         area_lider = df_filtrado.groupby("grande_area")["valor_pago"].sum().idxmax()
         pct_area = (df_filtrado.groupby("grande_area")["valor_pago"].sum().max() / total_volume) * 100
     else:
         area_lider = "N/D"
         pct_area = 0
 
-    if "regiao_nome" in df_filtrado.columns:
+    if "regiao_nome" in df_filtrado.columns and total_volume > 0:
         reg_lider = df_filtrado.groupby("regiao_nome")["valor_pago"].sum().idxmax()
         pct_reg = (df_filtrado.groupby("regiao_nome")["valor_pago"].sum().max() / total_volume) * 100
     else:
@@ -270,23 +289,21 @@ with tab1:
     if "grande_area" in df_filtrado.columns:
         area_data = df_filtrado.groupby("grande_area")["valor_pago"].sum().sort_values(ascending=False).head(10).reset_index()
         area_data.columns = ["Área", "Valor"]
-
         fig_area = px.bar(area_data, x="Valor", y="Área", orientation="h",
                           color="Valor", color_continuous_scale="Blues",
                           text=area_data["Valor"].apply(lambda x: fmt_brl(x)),
                           title="Top 10 Áreas com Maior Investimento")
-        fig_area.update_layout(template=PLOTLY_TEMPLATE, height=500, margin=dict(l=20, r=20, t=50, b=20))
+        fig_area.update_layout(template=PLOTLY_TEMPLATE, height=500)
         fig_area.update_traces(textposition="outside")
         st.plotly_chart(fig_area, use_container_width=True, config={'displayModeBar': True})
     else:
-        st.info("Coluna 'grande_area' não disponível.")
+        st.info("Coluna 'grande_area' não encontrada no arquivo.")
 
 # ---------- TAB 2: REGIÕES ----------
 with tab2:
     if "regiao_nome" in df_filtrado.columns:
         reg_data = df_filtrado.groupby("regiao_nome")["valor_pago"].sum().reset_index()
         reg_data.columns = ["Região", "Valor"]
-
         col1, col2 = st.columns(2)
         with col1:
             fig_bar = px.bar(reg_data, x="Região", y="Valor", color="Valor",
@@ -295,7 +312,6 @@ with tab2:
             fig_bar.update_traces(textposition="outside")
             fig_bar.update_layout(template=PLOTLY_TEMPLATE, height=450)
             st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': True})
-
         with col2:
             fig_pie = px.pie(reg_data, names="Região", values="Valor", hole=0.4,
                              title="Distribuição Regional",
@@ -304,7 +320,7 @@ with tab2:
             fig_pie.update_layout(template=PLOTLY_TEMPLATE, height=450)
             st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': True})
     else:
-        st.info("Coluna 'regiao_nome' não disponível.")
+        st.info("Coluna 'regiao_nome' não encontrada. Se houver coluna 'regiao', ela será mapeada.")
 
 # ---------- TAB 3: EVOLUÇÃO TEMPORAL ----------
 with tab3:
@@ -317,7 +333,7 @@ with tab3:
         fig_evol.update_layout(template=PLOTLY_TEMPLATE, height=450)
         st.plotly_chart(fig_evol, use_container_width=True, config={'displayModeBar': True})
     else:
-        st.info("Coluna 'ano' não disponível.")
+        st.info("Coluna 'ano' não encontrada. Verifique se há coluna de data.")
 
 # ---------- TAB 4: RANKINGS ----------
 with tab4:
@@ -330,7 +346,7 @@ with tab4:
             top_pesq["Total"] = top_pesq["Total"].apply(fmt_brl)
             st.dataframe(top_pesq, use_container_width=True, hide_index=True)
         else:
-            st.info("Dados de beneficiário não disponíveis.")
+            st.info("Coluna 'beneficiario' não encontrada.")
     with col_r2:
         st.markdown("#### 🏛️ Top 10 Instituições")
         if "instituicao_destino" in df_filtrado.columns:
@@ -339,7 +355,7 @@ with tab4:
             top_inst["Total"] = top_inst["Total"].apply(fmt_brl)
             st.dataframe(top_inst, use_container_width=True, hide_index=True)
         else:
-            st.info("Dados de instituição não disponíveis.")
+            st.info("Coluna 'instituicao_destino' não encontrada.")
 
     st.markdown("#### 🎓 Modalidades Mais Frequentes")
     if "modalidade" in df_filtrado.columns:
@@ -347,7 +363,7 @@ with tab4:
         modalidades.columns = ["Modalidade", "Quantidade"]
         st.dataframe(modalidades, use_container_width=True, hide_index=True)
     else:
-        st.info("Dados de modalidade não disponíveis.")
+        st.info("Coluna 'modalidade' não encontrada.")
 
 # ============================================================
 # RODAPÉ
@@ -356,5 +372,5 @@ st.markdown("---")
 st.markdown(f"""
 <p style='text-align:center; color:#64748B; font-size:0.7rem;'>
     🔬 CNPq Analytics · Fonte: CNPq / Portal Brasileiro de Dados Abertos<br>
-    Dados de bolsas de pesquisa concedidas entre 2014 e 2027.
+    Dashboard desenvolvido para portfólio de Análise de Dados.
 </p>""", unsafe_allow_html=True)
