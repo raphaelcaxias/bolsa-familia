@@ -1,5 +1,5 @@
 # appy3.py
-# CNPq Analytics Dashboard - Versão Otimizada
+# CNPq Analytics Dashboard - Versão Otimizada e Corrigida
 # Desenvolvido por: Raphael Pires
 
 import streamlit as st
@@ -27,8 +27,8 @@ CONFIG = {
     "DELIMITADOR": ";",
     "CLUSTER_DEFAULT": 3,
     "PERCENTIL_OUTLIER": 0.99,
-    "MAX_ROWS_TABLE": 100,  # Limite para exibição de tabelas
-    "CACHE_TTL": 3600  # Cache em segundos
+    "MAX_ROWS_TABLE": 100,
+    "CACHE_TTL": 3600
 }
 
 # ============================================================
@@ -200,7 +200,6 @@ section[data-testid="stSidebar"] {{
     padding: 0.5rem;
 }}
 
-/* Responsividade mobile */
 @media (max-width: 768px) {{
     .hero h1 {{ font-size: 2rem; }}
     .block-container {{ padding: 1rem !important; }}
@@ -217,6 +216,8 @@ def fmt_brl(valor):
         return "R$ 0,00"
     try:
         valor_float = float(valor)
+        if valor_float < 0:
+            return f"- {fmt_brl(abs(valor_float))}"
         if valor_float >= 1_000_000_000:
             return f"R$ {valor_float/1_000_000_000:.2f}B".replace(".", ",")
         if valor_float >= 1_000_000:
@@ -237,13 +238,16 @@ def fmt_num(valor):
         return str(valor)
 
 def parse_moeda_br(valor_str):
-    """Converte string monetária BR para float"""
-    if pd.isna(valor_str):
+    """Converte string monetária BR para float - CORRIGIDO"""
+    if pd.isna(valor_str) or str(valor_str).strip() == '':
         return np.nan
-    # Remove R$, espaços, pontos de milhar e substitui vírgula decimal por ponto
-    limpo = re.sub(r'[R$\s]', '', str(valor_str)).replace('.', '').replace(',', '.').strip()
     try:
-        return float(limpo) if limpo else np.nan
+        limpo = re.sub(r'[R$\s]', '', str(valor_str))
+        limpo = limpo.replace('.', '').replace(',', '.').strip()
+        if limpo and limpo != '.':
+            resultado = float(limpo)
+            return resultado if resultado != 0 else np.nan
+        return np.nan
     except ValueError:
         return np.nan
 
@@ -284,13 +288,12 @@ def calcular_pareto(df, coluna):
 
 @st.cache_data(ttl=CONFIG["CACHE_TTL"])
 def calcular_clusterizacao(df, coluna_grupo, colunas_features, n_clusters=None):
-    """Realiza clusterização K-Means com cache"""
+    """Realiza clusterização K-Means com cache - CORRIGIDO"""
     if n_clusters is None:
         n_clusters = CONFIG["CLUSTER_DEFAULT"]
     
-    # Agrupa dados
-    agg_dict = {col: 'sum' if col != coluna_grupo else 'first' for col in colunas_features}
-    cluster_data = df.groupby(coluna_grupo).agg(agg_dict).reset_index()
+    # Agrupa dados corretamente
+    cluster_data = df.groupby(coluna_grupo)[colunas_features].sum().reset_index()
     cluster_data = cluster_data.dropna(subset=colunas_features)
     
     if len(cluster_data) < n_clusters:
@@ -323,29 +326,24 @@ def carregar_dados(uploaded_file):
                 encoding=enc, 
                 low_memory=False
             )
-            # Normaliza nomes de colunas
             df.columns = df.columns.str.lower().str.strip()
             
-            # Valida colunas obrigatórias
             missing_cols = set(CONFIG["COLUNAS_OBRIGATORIAS"]) - set(df.columns)
             if missing_cols:
                 logger.warning(f"Colunas faltando para encoding {enc}: {missing_cols}")
                 continue
             
-            # Processa valor_pago
             if 'valor_pago' in df.columns:
                 df['valor_pago'] = df['valor_pago'].apply(parse_moeda_br)
                 df = df.dropna(subset=['valor_pago'])
                 df = df[df['valor_pago'] > 0]
             
-            # Processa datas
             if 'data_inicio_processo' in df.columns:
                 df['data_inicio_processo'] = pd.to_datetime(
                     df['data_inicio_processo'], errors='coerce', dayfirst=True
                 )
                 df['ano'] = df['data_inicio_processo'].dt.year
             
-            # Mapeia regiões
             regioes_map = {
                 'SE': 'Sudeste', 'SU': 'Sul', 'NE': 'Nordeste', 
                 'CO': 'Centro-Oeste', 'N': 'Norte', 'NO': 'Norte', 
@@ -368,10 +366,10 @@ def carregar_dados(uploaded_file):
     return None, None
 
 # ============================================================
-# FUNÇÃO PARA DOWNLOAD DE GRÁFICOS
+# FUNÇÃO PARA DOWNLOAD DE GRÁFICOS - CORRIGIDA
 # ============================================================
 def download_graph_button(fig, filename, label="📥 Baixar gráfico"):
-    """Cria botão de download para gráfico Plotly"""
+    """Cria botão de download para gráfico Plotly com feedback"""
     try:
         img_bytes = fig.to_image(format="png", width=1200, height=600, scale=2)
         return st.download_button(
@@ -382,7 +380,8 @@ def download_graph_button(fig, filename, label="📥 Baixar gráfico"):
             key=f"dl_{filename}"
         )
     except Exception as e:
-        logger.warning(f"Não foi possível gerar download do gráfico: {e}")
+        logger.warning(f"Erro ao gerar PNG: {e}")
+        st.warning("⚠️ Download não disponível para este gráfico")
         return None
 
 # ============================================================
@@ -490,21 +489,18 @@ def render_sidebar():
         st.markdown("### 🧬 Filtros")
         df_filtrado = df.copy()
         
-        # Filtro por ano
         if "ano" in df.columns:
             anos = sorted(df["ano"].dropna().unique().astype(int))
             if len(anos) > 1:
                 ano_sel = st.slider("Ano", min(anos), max(anos), (min(anos), max(anos)), step=1)
                 df_filtrado = df_filtrado[(df_filtrado["ano"] >= ano_sel[0]) & (df_filtrado["ano"] <= ano_sel[1])]
         
-        # Filtro por área do conhecimento
         if "grande_area" in df.columns:
             areas = sorted(df["grande_area"].dropna().unique())
             areas_sel = st.multiselect("Grande Área", areas, default=areas[:6] if len(areas)>6 else areas)
             if areas_sel:
                 df_filtrado = df_filtrado[df_filtrado["grande_area"].isin(areas_sel)]
         
-        # Filtro por região
         if "regiao_nome" in df.columns:
             regioes = sorted(df["regiao_nome"].dropna().unique())
             reg_sel = st.multiselect("Região", regioes, default=regioes)
@@ -514,9 +510,13 @@ def render_sidebar():
         return df_filtrado, df
 
 # ============================================================
-# KPIs PRINCIPAIS
+# KPIs PRINCIPAIS (com validação de dados vazios)
 # ============================================================
 def render_kpis(df_filtrado):
+    if df_filtrado.empty:
+        st.warning("⚠️ Nenhum dado disponível para exibir KPIs")
+        return 0, 0, 0, 0, 0
+    
     total_volume = df_filtrado["valor_pago"].sum()
     total_bolsas = df_filtrado.shape[0]
     ticket_medio = total_volume / total_bolsas if total_bolsas > 0 else 0
@@ -525,7 +525,6 @@ def render_kpis(df_filtrado):
 
     col1, col2, col3, col4 = st.columns(4)
 
-    # CAGR para delta
     if "ano" in df_filtrado.columns:
         evol_ano = df_filtrado.groupby("ano")["valor_pago"].sum()
         cagr = calcular_cagr(evol_ano)
@@ -555,6 +554,10 @@ def render_kpis(df_filtrado):
 # RESUMO EXECUTIVO COM INSIGHTS
 # ============================================================
 def render_resumo(df_filtrado, total_volume):
+    if df_filtrado.empty:
+        st.info("ℹ️ Carregue um arquivo CSV para visualizar os insights")
+        return
+    
     st.markdown("## 🔍 Resumo Executivo")
 
     insights = []
@@ -602,6 +605,10 @@ def render_resumo(df_filtrado, total_volume):
 def render_tab_evolucao(df_filtrado):
     st.markdown("### 📈 Evolução Temporal")
     
+    if df_filtrado.empty:
+        st.info("ℹ️ Nenhum dado disponível para análise temporal.")
+        return
+    
     if "ano" not in df_filtrado.columns or df_filtrado["ano"].isna().all():
         st.info("ℹ️ Coluna 'ano' não disponível para análise temporal.")
         return
@@ -618,7 +625,6 @@ def render_tab_evolucao(df_filtrado):
     st.plotly_chart(fig_evol, use_container_width=True)
     download_graph_button(fig_evol, "evolucao_investimento", "📥 Baixar gráfico (PNG)")
     
-    # Projeção linear
     if len(evol_data) >= 3:
         with st.expander("🔮 Projeção para próximos 2 anos", expanded=False):
             X = np.array(evol_data["ano"]).reshape(-1, 1)
@@ -657,6 +663,10 @@ def render_tab_evolucao(df_filtrado):
 def render_tab_regional(df_filtrado):
     st.markdown("### 🗺️ Distribuição Regional")
     
+    if df_filtrado.empty:
+        st.info("ℹ️ Nenhum dado disponível para análise regional.")
+        return
+    
     if "regiao_nome" not in df_filtrado.columns or df_filtrado["regiao_nome"].isna().all():
         st.info("ℹ️ Dados regionais não disponíveis.")
         return
@@ -688,7 +698,6 @@ def render_tab_regional(df_filtrado):
         fig_pie.update_traces(textposition="inside", textinfo="percent+label")
         st.plotly_chart(fig_pie, use_container_width=True)
     
-    # Ticket médio por região
     ticket_reg = df_filtrado.groupby("regiao_nome")["valor_pago"].mean().reset_index()
     ticket_reg.columns = ["Região", "Ticket Médio"]
     fig_ticket = px.bar(
@@ -704,6 +713,10 @@ def render_tab_regional(df_filtrado):
 # ============================================================
 def render_tab_areas(df_filtrado):
     st.markdown("### 🧬 Áreas do Conhecimento")
+    
+    if df_filtrado.empty:
+        st.info("ℹ️ Nenhum dado disponível para análise de áreas.")
+        return
     
     if "grande_area" not in df_filtrado.columns or df_filtrado["grande_area"].isna().all():
         st.info("ℹ️ Dados de área do conhecimento não disponíveis.")
@@ -735,7 +748,6 @@ def render_tab_areas(df_filtrado):
         fig_treemap.update_layout(template="plotly_dark", height=500)
         st.plotly_chart(fig_treemap, use_container_width=True)
     
-    # Análise de Pareto
     with st.expander("📊 Análise de Pareto (80/20)", expanded=True):
         pareto_data = calcular_pareto(area_data.copy(), "Valor")
         fig_pareto = make_subplots(specs=[[{"secondary_y": True}]])
@@ -766,9 +778,12 @@ def render_tab_areas(df_filtrado):
 def render_tab_rankings(df_filtrado):
     st.markdown("### 🏆 Rankings")
     
+    if df_filtrado.empty:
+        st.info("ℹ️ Nenhum dado disponível para rankings.")
+        return
+    
     col_r1, col_r2 = st.columns(2)
     
-    # Top Pesquisadores
     with col_r1:
         st.markdown("#### 👤 Top 10 Pesquisadores")
         if "beneficiario" in df_filtrado.columns:
@@ -782,7 +797,6 @@ def render_tab_rankings(df_filtrado):
             display_df.columns = ["Pesquisador", "Total Recebido", "Participação"]
             st.dataframe(display_df, use_container_width=True, hide_index=True)
             
-            # Busca de pesquisador
             with st.expander("🔍 Buscar pesquisador específico"):
                 busca = st.text_input("Digite parte do nome", key="busca_pesq")
                 if busca:
@@ -798,7 +812,6 @@ def render_tab_rankings(df_filtrado):
         else:
             st.info("ℹ️ Dados de beneficiário não disponíveis")
     
-    # Top Instituições
     with col_r2:
         st.markdown("#### 🏛️ Top 10 Instituições")
         if "instituicao_destino" in df_filtrado.columns:
@@ -812,7 +825,6 @@ def render_tab_rankings(df_filtrado):
         else:
             st.info("ℹ️ Dados de instituição não disponíveis")
     
-    # Modalidades
     st.markdown("#### 🎓 Modalidades Mais Frequentes")
     if "modalidade" in df_filtrado.columns:
         top_mod = df_filtrado["modalidade"].value_counts().head(10).reset_index()
@@ -831,6 +843,10 @@ def render_tab_rankings(df_filtrado):
 # ============================================================
 def render_tab_estatisticas(df_filtrado):
     st.markdown("### 📊 Estatísticas Descritivas")
+    
+    if df_filtrado.empty:
+        st.info("ℹ️ Nenhum dado disponível para estatísticas.")
+        return
     
     col_s1, col_s2 = st.columns(2)
     
@@ -865,7 +881,6 @@ def render_tab_estatisticas(df_filtrado):
         fig_hist.update_layout(template="plotly_dark", height=450)
         st.plotly_chart(fig_hist, use_container_width=True)
         
-        # Correlação se houver ano
         if "ano" in df_filtrado.columns:
             with st.expander("🔗 Correlação Ano × Investimento"):
                 corr_data = df_filtrado[["ano", "valor_pago"]].dropna()
@@ -886,7 +901,10 @@ def render_tab_estatisticas(df_filtrado):
 def render_tab_avancadas(df_filtrado):
     st.markdown("### 🤖 Análises Avançadas")
     
-    # Clusterização
+    if df_filtrado.empty:
+        st.info("ℹ️ Nenhum dado disponível para análises avançadas.")
+        return
+    
     with st.expander("🧠 Clusterização de Instituições (K-Means)", expanded=True):
         if "instituicao_destino" in df_filtrado.columns and "valor_pago" in df_filtrado.columns:
             n_clusters = st.slider("Número de clusters", 2, 6, CONFIG["CLUSTER_DEFAULT"], key="n_clusters")
@@ -910,7 +928,6 @@ def render_tab_avancadas(df_filtrado):
                 fig_cluster.update_layout(template="plotly_dark", height=500, yaxis=dict(visible=False))
                 st.plotly_chart(fig_cluster, use_container_width=True)
                 
-                # Resumo dos clusters
                 st.markdown("##### 📊 Resumo por Cluster")
                 cluster_summary = cluster_result.groupby("cluster")["valor_pago"].agg(["count", "sum", "mean"]).reset_index()
                 cluster_summary.columns = ["Cluster", "Qtd Instituições", "Investimento Total", "Média por Instituição"]
@@ -922,7 +939,6 @@ def render_tab_avancadas(df_filtrado):
         else:
             st.info("ℹ️ Dados insuficientes para clusterização")
     
-    # Detecção de Outliers
     with st.expander("⚠️ Detecção de Outliers", expanded=False):
         p99 = df_filtrado["valor_pago"].quantile(CONFIG["PERCENTIL_OUTLIER"])
         outliers = df_filtrado[df_filtrado["valor_pago"] > p99]
@@ -953,23 +969,24 @@ def render_export_footer(df_filtrado):
     col_exp1, col_exp2 = st.columns(2)
     
     with col_exp1:
-        # CSV dos dados filtrados
-        csv_buffer = io.StringIO()
-        df_filtrado.to_csv(csv_buffer, index=False, sep=";", encoding="utf-8-sig")
-        csv_bytes = csv_buffer.getvalue().encode("utf-8")
-        
-        st.download_button(
-            "📄 Baixar CSV (dados filtrados)",
-            data=csv_bytes,
-            file_name=f"cnpq_analytics_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-            mime="text/csv",
-            key="btn_csv_filtrado"
-        )
+        if not df_filtrado.empty:
+            csv_buffer = io.StringIO()
+            df_filtrado.to_csv(csv_buffer, index=False, sep=";", encoding="utf-8-sig")
+            csv_bytes = csv_buffer.getvalue().encode("utf-8")
+            
+            st.download_button(
+                "📄 Baixar CSV (dados filtrados)",
+                data=csv_bytes,
+                file_name=f"cnpq_analytics_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                mime="text/csv",
+                key="btn_csv_filtrado"
+            )
+        else:
+            st.button("📄 Baixar CSV", disabled=True, help="Carregue dados primeiro")
     
     with col_exp2:
         st.markdown(f'<a href="{LINK_CSV}" target="_blank" style="text-decoration: none;"><div class="download-btn" style="text-align: center;">📥 Baixar CSV original (Google Drive)</div></a>', unsafe_allow_html=True)
     
-    # Rodapé
     st.markdown("---")
     st.markdown(f"""
     <div class="footer">
@@ -985,25 +1002,24 @@ def render_export_footer(df_filtrado):
 def main():
     logger.info("Iniciando aplicação CNPq Analytics")
     
-    # Renderiza hero section
     render_hero()
     
-    # Renderiza sidebar e carrega dados
     df_filtrado, df_original = render_sidebar()
     
     if df_filtrado is None:
-        # Aguarda upload
         st.markdown("<br>" * 3, unsafe_allow_html=True)
-        render_export_footer(pd.DataFrame())  # Rodapé mesmo sem dados
+        render_export_footer(pd.DataFrame())
         return
     
-    # KPIs principais
-    render_kpis(df_filtrado)
+    # Validação adicional para dados vazios após filtros
+    if df_filtrado.empty:
+        st.warning("⚠️ Nenhum dado encontrado com os filtros selecionados. Ajuste os filtros.")
+        render_export_footer(pd.DataFrame())
+        return
     
-    # Resumo executivo
+    render_kpis(df_filtrado)
     render_resumo(df_filtrado, df_filtrado["valor_pago"].sum())
     
-    # Tabs de análise
     st.markdown("## 📊 Análises Interativas")
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📈 Evolução", "🗺️ Regional", "🧬 Áreas",
@@ -1028,7 +1044,6 @@ def main():
     with tab6:
         render_tab_avancadas(df_filtrado)
     
-    # Sobre o analista
     st.markdown("---")
     st.markdown("""
     <div style="background: rgba(18,25,45,0.5); border-radius: 1rem; padding: 1.2rem; margin: 1rem 0;">
@@ -1050,7 +1065,6 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Exportação e rodapé
     render_export_footer(df_filtrado)
     
     logger.info("Aplicação renderizada com sucesso")
